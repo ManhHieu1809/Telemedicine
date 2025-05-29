@@ -111,11 +111,11 @@ public class AppointmentService {
             List<AppointmentResponse> responses;
             if ("ADMIN".equals(role)) {
                 responses = appointmentRepository.findAll().stream()
-                        .map(appointment -> mapToResponse(appointment, "Lấy lại cuộc hẹn thành công"))
+                        .map(appointment -> mapToResponse(appointment, "Lấy cuộc hẹn thành công"))
                         .collect(Collectors.toList());
             } else if ("DOCTOR".equals(role)) {
                 responses = appointmentRepository.findByDoctorUserId(userId).stream()
-                        .map(appointment -> mapToResponse(appointment, "Lấy lại cuộc hẹn thành công"))
+                        .map(appointment -> mapToResponse(appointment, "Lấy cuộc hẹn thành công"))
                         .collect(Collectors.toList());
             } else {
                 Patient patient = patientRepository.findByUserId(userId)
@@ -289,6 +289,13 @@ public class AppointmentService {
         }
     }
 
+    public List<AppointmentResponse> getAppointmentsByDoctorId(Long doctorId) {
+        List<Appointment> appointments = appointmentRepository.findByDoctorUserId(doctorId);
+        return appointments.stream()
+                .map(appointment -> mapToResponse(appointment, "Lấy cuộc hẹn thành công"))
+                .collect(Collectors.toList());
+    }
+
     private void createNotification(User user, String message) {
         Notification notification = new Notification();
         notification.setUser(user);
@@ -324,6 +331,8 @@ public class AppointmentService {
                 appointment.getPatient().getFullName(),
                 appointment.getDoctor().getId(),
                 appointment.getDoctor().getFullName(),
+                appointment.getDoctor().getUser().getAvatarUrl(),
+                appointment.getDoctor().getSpecialty(),
                 appointment.getDate(),
                 appointment.getTime(),
                 appointment.getStatus(),

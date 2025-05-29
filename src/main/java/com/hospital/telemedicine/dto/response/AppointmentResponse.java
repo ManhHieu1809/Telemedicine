@@ -14,6 +14,8 @@ public class AppointmentResponse {
     private String patientName;
     private Long doctorId;
     private String doctorName;
+    private String doctorAvatarUrl;
+    private String doctorSpecialty;
     private LocalDate date;
     private LocalTime time;
     private Appointment.Status status;
@@ -24,13 +26,15 @@ public class AppointmentResponse {
 
     // Constructor cho trường hợp thành công
     public AppointmentResponse(Long id, Long patientId, String patientName, Long doctorId, String doctorName,
-                               LocalDate date,LocalTime time, Appointment.Status status,Appointment.AppointmentType appointmentType,
+                               String doctorAvatarUrl,String doctorSpecialty,LocalDate date,LocalTime time, Appointment.Status status,Appointment.AppointmentType appointmentType,
                                LocalDateTime createdAt, String message) {
         this.id = id;
         this.patientId = patientId;
         this.patientName = patientName;
         this.doctorId = doctorId;
         this.doctorName = doctorName;
+        this.doctorAvatarUrl = doctorAvatarUrl;
+        this.doctorSpecialty = doctorSpecialty;
         this.date = date;
         this.time = time;
         this.status = status;

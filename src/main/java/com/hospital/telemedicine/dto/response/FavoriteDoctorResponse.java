@@ -8,7 +8,10 @@ public class FavoriteDoctorResponse {
     private Long doctorId;
     private Long doctorUserId;
     private String doctorName;
+    private String avatarUrl;
     private String specialty;
+    private double averageRating;
+    private int totalReviews;
     private LocalDateTime createdAt;
     private boolean success;
 

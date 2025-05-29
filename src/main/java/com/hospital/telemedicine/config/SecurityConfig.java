@@ -64,22 +64,15 @@ public class SecurityConfig {
                 .requestMatchers("/queue/**").permitAll() // Cho phép queue subscriptions
                 .requestMatchers("/api/auth/create-doctor").hasRole("ADMIN")
                 .requestMatchers("/api/test/**").permitAll()
-                .requestMatchers("/**").permitAll()
+                .requestMatchers("/api/appointments/doctor/**").permitAll()
                 .requestMatchers("/index.html").permitAll()
-                .requestMatchers("/chat.html").permitAll()
+                .requestMatchers("/favicon.ico").permitAll()
                 .anyRequest().authenticated();
 
         http.authenticationProvider(authenticationProvider());
 
-        // Loại trừ WebSocket khỏi JWT filter
-        http.addFilterBefore(new JwtAuthenticationFilter() {
-            @Override
-            protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-                String path = request.getRequestURI();
-                return path.startsWith("/ws") || path.startsWith("/app") ||
-                        path.startsWith("/topic") || path.startsWith("/queue");
-            }
-        }, UsernamePasswordAuthenticationFilter.class);
+        // Sử dụng bean JwtAuthenticationFilter đã được Spring quản lý
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

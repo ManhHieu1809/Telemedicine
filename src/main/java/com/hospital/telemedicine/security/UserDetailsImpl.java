@@ -19,20 +19,23 @@ public class UserDetailsImpl implements UserDetails {
     private Long id;
     private String username;
     private String email;
-
+    private String avatarUrl;
+    private Long patientId;
     @JsonIgnore
     private String password;
 
     private Collection<? extends GrantedAuthority> authorities;
 
 
-    public static UserDetailsImpl build(User user) {
+    public static UserDetailsImpl build(User user,Long patientId) {
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRoles().name());
 
         return new UserDetailsImpl(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                user.getAvatarUrl(),
+                patientId,
                 user.getPasswordHash(),
                 Collections.singletonList(authority)
         );

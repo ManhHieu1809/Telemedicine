@@ -1,5 +1,6 @@
 package com.hospital.telemedicine.service;
 
+import com.hospital.telemedicine.dto.request.ChangePasswordRequest;
 import com.hospital.telemedicine.dto.request.LoginRequest;
 import com.hospital.telemedicine.dto.request.RegisterRequest;
 import com.hospital.telemedicine.dto.response.AuthResponse;
@@ -66,7 +67,8 @@ public class AuthService {
                     userDetails.getId(),
                     userDetails.getUsername(),
                     userDetails.getEmail(),
-                    userDetails.getAuthorities().toString().replace("[ROLE_", "").replace("]", "")
+                    userDetails.getAuthorities().toString().replace("[ROLE_", "").replace("]", ""),
+                    userDetails.getAvatarUrl()
             );
         } catch (org.springframework.security.core.AuthenticationException e) {
             return new AuthResponse();
@@ -248,5 +250,19 @@ public class AuthService {
         mailSender.send(message);
     }
 
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
 
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không đúng");
+        }
+
+        if (request.getNewPassword().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
 }

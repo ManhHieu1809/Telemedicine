@@ -1,6 +1,7 @@
 package com.hospital.telemedicine.controller;
 
 import com.hospital.telemedicine.dto.request.MedicalRecordRequest;
+import com.hospital.telemedicine.dto.response.ApiResponse;
 import com.hospital.telemedicine.dto.response.MedicalRecordResponse;
 import com.hospital.telemedicine.service.MedicalRecordService;
 import org.springframework.http.MediaType;
@@ -23,23 +24,23 @@ public class MedicalRecordController {
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<MedicalRecordResponse> createMedicalRecord(@RequestBody MedicalRecordRequest request) throws MessagingException {
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> createMedicalRecord(@RequestBody MedicalRecordRequest request) throws MessagingException {
         MedicalRecordResponse response = medicalRecordService.createMedicalRecord(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<List<MedicalRecordResponse>> getMedicalRecordsByPatient(@PathVariable Long patientId) {
+    public ResponseEntity<ApiResponse<List<MedicalRecordResponse>>> getMedicalRecordsByPatient(@PathVariable Long patientId) {
         List<MedicalRecordResponse> records = medicalRecordService.getMedicalRecordsByPatient(patientId);
-        return ResponseEntity.ok(records);
+        return ResponseEntity.ok(new ApiResponse<>(true, records));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<MedicalRecordResponse> updateMedicalRecord(@PathVariable Long id, @RequestBody MedicalRecordRequest request) throws MessagingException {
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> updateMedicalRecord(@PathVariable Long id, @RequestBody MedicalRecordRequest request) throws MessagingException {
         MedicalRecordResponse response = medicalRecordService.updateMedicalRecord(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -53,8 +54,8 @@ public class MedicalRecordController {
 
     @PostMapping("/{id}/email")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<MedicalRecordResponse> sendMedicalRecordByEmail(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> sendMedicalRecordByEmail(@PathVariable Long id) {
         MedicalRecordResponse response = medicalRecordService.sendMedicalRecordByEmail(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 }

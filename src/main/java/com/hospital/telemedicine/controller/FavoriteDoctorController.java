@@ -1,5 +1,6 @@
 package com.hospital.telemedicine.controller;
 
+import com.hospital.telemedicine.dto.response.ApiResponse;
 import com.hospital.telemedicine.dto.response.FavoriteDoctorResponse;
 import com.hospital.telemedicine.security.UserDetailsImpl;
 import com.hospital.telemedicine.service.FavoriteDoctorService;
@@ -21,35 +22,35 @@ public class FavoriteDoctorController {
     }
 
     @PostMapping("/{doctorUserId}")
-    public ResponseEntity<FavoriteDoctorResponse> addFavoriteDoctor(
+    public ResponseEntity<ApiResponse<FavoriteDoctorResponse>> addFavoriteDoctor(
             @PathVariable Long doctorUserId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
         System.out.println("Controller: Adding favorite doctor for userId: " + userId + ", doctorUserId: " + doctorUserId);
         FavoriteDoctorResponse response = favoriteDoctorService.addFavoriteDoctor(userId, doctorUserId);
         System.out.println("Controller: Response: " + response);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 
     @DeleteMapping("/{doctorUserId}")
-    public ResponseEntity<FavoriteDoctorResponse> removeFavoriteDoctor(
+    public ResponseEntity<ApiResponse<FavoriteDoctorResponse>> removeFavoriteDoctor(
             @PathVariable Long doctorUserId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
         System.out.println("Controller: Removing favorite doctor for userId: " + userId + ", doctorUserId: " + doctorUserId);
         FavoriteDoctorResponse response = favoriteDoctorService.removeFavoriteDoctor(userId, doctorUserId);
         System.out.println("Controller: Response: " + response);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 
     @GetMapping
-    public ResponseEntity<List<FavoriteDoctorResponse>> getFavoriteDoctors(
+    public ResponseEntity<ApiResponse<List<FavoriteDoctorResponse>>> getFavoriteDoctors(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
         System.out.println("Controller: Getting favorite doctors for userId: " + userId);
         List<FavoriteDoctorResponse> favorites = favoriteDoctorService.getFavoriteDoctors(userId);
         System.out.println("Controller: Favorites: " + favorites);
-        return ResponseEntity.ok(favorites);
+        return ResponseEntity.ok(new ApiResponse<>(true, favorites));
     }
 
     private Long extractUserId(UserDetails userDetails) {

@@ -12,6 +12,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "OR (m.sender.id = :userId2 AND m.receiver.id = :userId1) ORDER BY m.sentAt ASC")
     List<Message> findChatHistory(Long userId1, Long userId2);
 
-    @Query("SELECT m FROM Message m WHERE m.conversation = :conversationId ORDER BY m.sentAt ASC")
+
     List<Message> findByConversationId(Long conversationId);
 }

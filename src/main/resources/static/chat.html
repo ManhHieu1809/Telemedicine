@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .conversation-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .conversation {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .conversation h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #333;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .message.sent {
+            background-color: #0084ff;
+            color: white;
+            margin-left: 20%;
+            text-align: right;
+        }
+        .message.received {
+            background-color: #e9ecef;
+            margin-right: 20%;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            padding: 10px;
+            text-align: center;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .input-container button {
+            padding: 10px 20px;
+            background-color: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .input-container button:hover {
+            background-color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+    class ErrorBoundary extends React.Component {
+        state = { hasError: false, error: null };
+
+        static getDerivedStateFromError(error) {
+            return { hasError: true, error };
+        }
+
+        render() {
+            if (this.state.hasError) {
+                return <div className="error">Error: {this.state.error.message}</div>;
+            }
+            return this.props.children;
+        }
+    }
+
+    function Chat() {
+        const [conversations, setConversations] = React.useState([]);
+        const [error, setError] = React.useState('');
+        const [stompClient, setStompClient] = React.useState(null);
+        const [messageInput, setMessageInput] = React.useState('');
+        const [selectedConversationId, setSelectedConversationId] = React.useState(null);
+
+        React.useEffect(() => {
+            console.log('Effect running');
+            const token = localStorage.getItem('jwtToken');
+            console.log('Token:', token);
+            if (!token) {
+                setError('No JWT token found. Please login again.');
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Fetch conversations
+            fetch('/api/chat/conversations', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(`Error ${response.status}: ${err.message}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Conversations:', data);
+                    if (!Array.isArray(data)) {
+                        console.error('Data is not an array:', data);
+                        setError('Invalid data format');
+                        return;
+                    }
+                    setConversations(data);
+                    if (data.length > 0) {
+                        setSelectedConversationId(data[0].id);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching conversations:', error);
+                    setError('Error fetching conversations: ' + error.message);
+                });
+
+            // WebSocket
+            console.log('Opening Web Socket...');
+            const socket = new SockJS('http://localhost:8080/ws');
+            const client = Stomp.over(socket);
+            client.connect({}, frame => {
+                console.log('Connected: ' + frame);
+                client.subscribe('/user/queue/messages', message => {
+                    console.log('Received message:', message.body);
+                    try {
+                        const newMessage = JSON.parse(message.body);
+                        if (newMessage && newMessage.conversationId) {
+                            setConversations(prev => {
+                                const updated = prev.map(conv => {
+                                    if (conv.id === newMessage.conversationId) {
+                                        return {
+                                            ...conv,
+                                            messages: [...(conv.messages || []), newMessage],
+                                            lastMessage: newMessage.content
+                                        };
+                                    }
+                                    return conv;
+                                });
+                                return updated;
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Invalid message body:', message.body);
+                    }
+                });
+                setStompClient(client);
+            }, error => {
+                console.error('WebSocket connection error:', error);
+                setError('WebSocket connection failed');
+                setTimeout(() => {
+                    client.connect({}, frame => {
+                        console.log('Reconnected: ' + frame);
+                    }, err => {
+                        console.error('Reconnect failed:', err);
+                    });
+                }, 5000);
+            });
+
+            return () => {
+                if (client) {
+                    client.disconnect();
+                    console.log('WebSocket disconnected');
+                }
+            };
+        }, []);
+
+        const sendMessage = () => {
+            if (!stompClient || !messageInput.trim() || !selectedConversationId) {
+                setError('Please select a conversation and enter a message.');
+                return;
+            }
+            const message = {
+                conversationId: selectedConversationId,
+                senderId: 2, // Giả định userId của doctor1 là 2
+                senderName: 'doctor1',
+                receiverId: 3, // Giả định receiver là patient1
+                receiverName: 'patient1',
+                content: messageInput,
+                timestamp: new Date().toISOString(),
+                read: false
+            };
+            stompClient.send('/app/chat.send', {}, JSON.stringify(message));
+            setMessageInput('');
+            setConversations(prev => {
+                const updated = prev.map(conv => {
+                    if (conv.id === selectedConversationId) {
+                        return {
+                            ...conv,
+                            messages: [...(conv.messages || []), message],
+                            lastMessage: message.content
+                        };
+                    }
+                    return conv;
+                });
+                return updated;
+            });
+        };
+
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        };
+
+        return (
+            <div className="chat-container">
+                {error && <div className="error">{error}</div>}
+                {!error && conversations.length === 0 && <div>Loading conversations...</div>}
+                <div className="conversation-list">
+                    {Array.isArray(conversations) && conversations.map(conv => (
+                        <div
+                            key={conv.id}
+                            className="conversation"
+                            style={{
+                                backgroundColor: selectedConversationId === conv.id ? '#e6f0ff' : 'transparent',
+                                cursor: 'pointer'
+                            }}
+                            onClick={() => setSelectedConversationId(conv.id)}
+                        >
+                            <h3>Conversation {conv.id}: {conv.lastMessage || 'No messages'}</h3>
+                            {selectedConversationId === conv.id && Array.isArray(conv.messages) && conv.messages.length > 0 ? (
+                                <div>
+                                    {conv.messages.map(msg => (
+                                        <div
+                                            key={msg.id}
+                                            className={`message ${msg.senderId === 2 ? 'sent' : 'received'}`}
+                                        >
+                                            <strong>{msg.senderName}</strong>: {msg.content}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                selectedConversationId === conv.id && <div>No messages</div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <div className="input-container">
+                    <input
+                        type="text"
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type a message..."
+                        disabled={!selectedConversationId}
+                    />
+                    <button onClick={sendMessage} disabled={!selectedConversationId}>
+                        Send
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    ReactDOM.render(
+        <ErrorBoundary>
+            <Chat />
+        </ErrorBoundary>,
+        document.getElementById('root')
+    );
+</script>
+</body>
+</html>

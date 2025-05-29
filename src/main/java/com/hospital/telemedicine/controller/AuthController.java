@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -49,8 +51,20 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ChangePasswordRequest request) {
+        Long userId = extractUserId(userDetails);
+        authService.changePassword(userId, request);
+        return ResponseEntity.ok().build();
+    }
 
-
-
+    private Long extractUserId(UserDetails userDetails) {
+        if (userDetails instanceof com.hospital.telemedicine.security.UserDetailsImpl) {
+            return ((com.hospital.telemedicine.security.UserDetailsImpl) userDetails).getId();
+        }
+        throw new IllegalArgumentException("UserDetails must be an instance of UserDetailsImpl");
+    }
 
 }

@@ -35,7 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/register",
             "/api/password/forgot-password",
             "/api/password/verify-otp",
-            "/api/password/reset-password"
+            "/api/password/reset-password",
+            "/ws/**", // WebSocket endpoint
+            "/favicon.ico"
+
     );
 
     @Override

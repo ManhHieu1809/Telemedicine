@@ -123,6 +123,12 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
+        List<AppointmentResponse> appointments = appointmentService.getAppointmentsByDoctorId(doctorId);
+        return ResponseEntity.ok(appointments);
+    }
+
     // Hàm hỗ trợ: Lấy userId từ UserDetailsImpl
     private Long extractUserId(UserDetails userDetails) {
         if (userDetails instanceof com.hospital.telemedicine.security.UserDetailsImpl) {
