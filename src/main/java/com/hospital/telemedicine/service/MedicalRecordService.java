@@ -1,10 +1,11 @@
 package com.hospital.telemedicine.service;
 
 import com.hospital.telemedicine.dto.request.MedicalRecordRequest;
-import com.hospital.telemedicine.dto.response.MedicalRecordResponse;
-import com.hospital.telemedicine.dto.response.PrescriptionDetailResponse;
+import com.hospital.telemedicine.dto.request.PrescriptionDetailRequest;
+import com.hospital.telemedicine.dto.response.*;
 import com.hospital.telemedicine.entity.*;
 import com.hospital.telemedicine.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,11 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class MedicalRecordService {
+    @Autowired
+    private SmartPrescriptionService smartPrescriptionService;
 
     private final MedicalRecordRepository medicalRecordRepository;
     private final PrescriptionRepository prescriptionRepository;
@@ -46,6 +49,57 @@ public class MedicalRecordService {
         this.userFcmTokenRepository = userFcmTokenRepository;
         this.mailSender = mailSender;
         this.notificationRepository = notificationRepository;
+    }
+
+    @PreAuthorize("hasRole('DOCTOR') and authentication.principal.id == @doctorRepository.findById(#request.doctorId).orElseThrow().user.id")
+    @Transactional
+    public MedicalRecordResponse createMedicalRecordWithDrugCheck(MedicalRecordRequest request) {
+        try {
+            System.out.println("Creating medical record with drug safety check...");
+
+            // 1. Phân tích đơn thuốc trước khi tạo
+            SmartPrescriptionResponse drugAnalysis = smartPrescriptionService.analyzePrescription(request);
+
+            // 2. Kiểm tra cảnh báo nghiêm trọng
+            boolean hasHighRiskWarnings = drugAnalysis.getWarnings() != null &&
+                    drugAnalysis.getWarnings().stream()
+                            .anyMatch(warning -> "HIGH".equals(warning.getSeverity()));
+
+            if (hasHighRiskWarnings) {
+                // Trả về cảnh báo thay vì tạo đơn thuốc ngay
+                StringBuilder warningMessage = new StringBuilder("CẢNH BÁO NGHIÊM TRỌNG:\n");
+                drugAnalysis.getWarnings().stream()
+                        .filter(w -> "HIGH".equals(w.getSeverity()))
+                        .forEach(w -> warningMessage.append("- ").append(w.getMessage()).append("\n"));
+
+                warningMessage.append("\nVui lòng xem xét lại đơn thuốc trước khi lưu.");
+
+                MedicalRecordResponse warningResponse = new MedicalRecordResponse(warningMessage.toString());
+                // Thêm thông tin phân tích thuốc vào response
+                warningResponse.setDrugAnalysis(drugAnalysis);
+                return warningResponse;
+            }
+
+            // 3. Nếu không có cảnh báo nghiêm trọng, tiếp tục tạo medical record
+            MedicalRecordResponse result = createMedicalRecord(request);
+
+            // 4. Thêm thông tin phân tích thuốc vào response
+            if (result.isSuccess()) {
+                result.setDrugAnalysis(drugAnalysis);
+
+                // Thêm thông tin generic alternatives vào message nếu có
+                if (drugAnalysis.getGenericAlternatives() != null && !drugAnalysis.getGenericAlternatives().isEmpty()) {
+                    String originalMessage = result.getMessage();
+                    result.setMessage(originalMessage + " Tìm thấy " + drugAnalysis.getGenericAlternatives().size() + " thuốc generic thay thế.");
+                }
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error creating medical record with drug check: " + e.getMessage());
+            return new MedicalRecordResponse("Lỗi khi tạo hồ sơ y tế với kiểm tra thuốc: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('DOCTOR') and authentication.principal.id == @doctorRepository.findById(#request.doctorId).orElseThrow().user.id")
@@ -365,5 +419,202 @@ public class MedicalRecordService {
                 .replace("~", "\\textasciitilde")
                 .replace("^", "\\textasciicircum")
                 .replace("\\", "\\textbackslash");
+    }
+
+    // Thêm các methods sau vào MedicalRecordService
+
+    @PreAuthorize("hasRole('DOCTOR') and authentication.principal.id == @medicalRecordRepository.findById(#id).orElseThrow().doctor.user.id")
+    @Transactional
+    public MedicalRecordResponse updateMedicalRecordWithDrugCheck(Long id, MedicalRecordRequest request) {
+        try {
+            System.out.println("Updating medical record with drug safety check...");
+
+            // 1. Phân tích đơn thuốc trước khi cập nhật
+            if (request.isCheckDrugInteractions()) {
+                SmartPrescriptionResponse drugAnalysis = smartPrescriptionService.analyzePrescription(request);
+
+                // 2. Kiểm tra cảnh báo nghiêm trọng
+                boolean hasHighRiskWarnings = drugAnalysis.getWarnings() != null &&
+                        drugAnalysis.getWarnings().stream()
+                                .anyMatch(warning -> "HIGH".equals(warning.getSeverity()));
+
+                if (hasHighRiskWarnings && !request.isIgnoreWarnings()) {
+                    // Trả về cảnh báo thay vì cập nhật ngay
+                    StringBuilder warningMessage = new StringBuilder("CẢNH BÁO NGHIÊM TRỌNG KHI CẬP NHẬT:\n");
+                    drugAnalysis.getWarnings().stream()
+                            .filter(w -> "HIGH".equals(w.getSeverity()))
+                            .forEach(w -> warningMessage.append("- ").append(w.getMessage()).append("\n"));
+
+                    warningMessage.append("\nVui lòng xem xét lại đơn thuốc trước khi cập nhật.");
+
+                    MedicalRecordResponse warningResponse = new MedicalRecordResponse(warningMessage.toString());
+                    warningResponse.setDrugAnalysis(drugAnalysis);
+                    return warningResponse;
+                }
+            }
+
+            // 3. Tiếp tục cập nhật medical record
+            MedicalRecordResponse result = updateMedicalRecord(id, request);
+
+            // 4. Thêm thông tin phân tích thuốc nếu có
+            if (result.isSuccess() && request.isCheckDrugInteractions()) {
+                SmartPrescriptionResponse drugAnalysis = smartPrescriptionService.analyzePrescription(request);
+                result.setDrugAnalysis(drugAnalysis);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Error updating medical record with drug check: " + e.getMessage());
+            return new MedicalRecordResponse("Lỗi khi cập nhật hồ sơ y tế với kiểm tra thuốc: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy báo cáo tương tác thuốc cho bệnh nhân
+     */
+    public SmartPrescriptionResponse getPatientDrugInteractionReport(Long patientId) {
+        try {
+            return smartPrescriptionService.analyzePatientMedicationHistory(patientId);
+        } catch (Exception e) {
+            SmartPrescriptionResponse errorResponse = new SmartPrescriptionResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("Lỗi khi tạo báo cáo tương tác thuốc: " + e.getMessage());
+            return errorResponse;
+        }
+    }
+
+    /**
+     * Kiểm tra an toàn thuốc cho đơn thuốc cụ thể
+     */
+    public SmartPrescriptionResponse checkPrescriptionSafety(Long prescriptionId) {
+        try {
+            // Lấy thông tin prescription
+            Prescription prescription = prescriptionRepository.findById(prescriptionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Prescription not found"));
+
+            // Tạo request để kiểm tra
+            MedicalRecordRequest request = new MedicalRecordRequest();
+            request.setPatientId(prescription.getPatient().getId());
+            request.setDoctorId(prescription.getDoctor().getId());
+
+            List<PrescriptionDetailRequest> details = prescription.getDetails().stream()
+                    .map(detail -> {
+                        PrescriptionDetailRequest detailRequest = new PrescriptionDetailRequest();
+                        detailRequest.setMedicationName(detail.getMedicationName());
+                        detailRequest.setDosage(detail.getDosage());
+                        detailRequest.setFrequency(detail.getFrequency());
+                        detailRequest.setDuration(detail.getDuration());
+                        detailRequest.setInstructions(detail.getInstructions());
+                        return detailRequest;
+                    })
+                    .collect(Collectors.toList());
+
+            request.setPrescriptionDetails(details);
+
+            return smartPrescriptionService.analyzePrescription(request);
+
+        } catch (Exception e) {
+            SmartPrescriptionResponse errorResponse = new SmartPrescriptionResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("Lỗi khi kiểm tra an toàn đơn thuốc: " + e.getMessage());
+            return errorResponse;
+        }
+    }
+
+    /**
+     * Lấy gợi ý thuốc cho chẩn đoán
+     */
+    public List<DrugSuggestionResponse> getDrugSuggestionsForDiagnosis(String diagnosis) {
+        return smartPrescriptionService.suggestDrugsForDiagnosis(diagnosis);
+    }
+
+    /**
+     * Tạo báo cáo tổng hợp về sử dụng thuốc của bệnh nhân
+     */
+    public MedicationSummaryResponse getPatientMedicationSummary(Long patientId) {
+        try {
+            List<MedicalRecord> records = medicalRecordRepository.findByPatientId(patientId);
+
+            MedicationSummaryResponse summary = new MedicationSummaryResponse();
+            summary.setPatientId(patientId);
+            summary.setTotalPrescriptions(records.size());
+
+            // Thu thập tất cả thuốc đã sử dụng
+            Set<String> allMedications = new HashSet<>();
+            Map<String, Integer> medicationFrequency = new HashMap<>();
+
+            for (MedicalRecord record : records) {
+                if (record.getPrescription() != null && record.getPrescription().getDetails() != null) {
+                    for (PrescriptionDetail detail : record.getPrescription().getDetails()) {
+                        String medication = detail.getMedicationName();
+                        allMedications.add(medication);
+                        medicationFrequency.put(medication, medicationFrequency.getOrDefault(medication, 0) + 1);
+                    }
+                }
+            }
+
+            summary.setUniqueMedications(allMedications.size());
+            summary.setMostFrequentMedications(
+                    medicationFrequency.entrySet().stream()
+                            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                            .limit(10)
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue,
+                                    (e1, e2) -> e1,
+                                    LinkedHashMap::new
+                            ))
+            );
+
+            // Phân tích an toàn
+            List<String> currentMedications = new ArrayList<>(allMedications);
+            if (currentMedications.size() > 1) {
+                DrugInteractionResponse interactionCheck = smartPrescriptionService.checkInteractions(currentMedications);
+                summary.setHasInteractionRisk(interactionCheck.isHasInteractions());
+                summary.setInteractionCount(interactionCheck.getInteractions().size());
+            }
+
+            return summary;
+
+        } catch (Exception e) {
+            MedicationSummaryResponse errorSummary = new MedicationSummaryResponse();
+            errorSummary.setPatientId(patientId);
+            errorSummary.setErrorMessage("Lỗi khi tạo báo cáo tổng hợp thuốc: " + e.getMessage());
+            return errorSummary;
+        }
+    }
+
+    // Inner class cho báo cáo tổng hợp
+    public static class MedicationSummaryResponse {
+        private Long patientId;
+        private int totalPrescriptions;
+        private int uniqueMedications;
+        private Map<String, Integer> mostFrequentMedications;
+        private boolean hasInteractionRisk;
+        private int interactionCount;
+        private String errorMessage;
+
+        // Getters and setters
+        public Long getPatientId() { return patientId; }
+        public void setPatientId(Long patientId) { this.patientId = patientId; }
+
+        public int getTotalPrescriptions() { return totalPrescriptions; }
+        public void setTotalPrescriptions(int totalPrescriptions) { this.totalPrescriptions = totalPrescriptions; }
+
+        public int getUniqueMedications() { return uniqueMedications; }
+        public void setUniqueMedications(int uniqueMedications) { this.uniqueMedications = uniqueMedications; }
+
+        public Map<String, Integer> getMostFrequentMedications() { return mostFrequentMedications; }
+        public void setMostFrequentMedications(Map<String, Integer> mostFrequentMedications) { this.mostFrequentMedications = mostFrequentMedications; }
+
+        public boolean isHasInteractionRisk() { return hasInteractionRisk; }
+        public void setHasInteractionRisk(boolean hasInteractionRisk) { this.hasInteractionRisk = hasInteractionRisk; }
+
+        public int getInteractionCount() { return interactionCount; }
+        public void setInteractionCount(int interactionCount) { this.interactionCount = interactionCount; }
+
+        public String getErrorMessage() { return errorMessage; }
+        public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
     }
 }

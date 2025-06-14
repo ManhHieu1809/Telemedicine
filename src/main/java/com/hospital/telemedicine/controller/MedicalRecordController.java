@@ -22,9 +22,28 @@ public class MedicalRecordController {
         this.medicalRecordService = medicalRecordService;
     }
 
+    // Endpoint gốc (không có kiểm tra thuốc)
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<MedicalRecordResponse>> createMedicalRecord(@RequestBody MedicalRecordRequest request) throws MessagingException {
+        MedicalRecordResponse response = medicalRecordService.createMedicalRecord(request);
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
+    }
+
+    // Endpoint mới với kiểm tra thuốc thông minh
+    @PostMapping("/smart")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> createSmartMedicalRecord(@RequestBody MedicalRecordRequest request) throws MessagingException {
+        MedicalRecordResponse response = medicalRecordService.createMedicalRecordWithDrugCheck(request);
+        return ResponseEntity.ok(new ApiResponse<>(response.isSuccess(), response));
+    }
+
+    // Endpoint để force create (bỏ qua cảnh báo)
+    @PostMapping("/force")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> forceCreateMedicalRecord(@RequestBody MedicalRecordRequest request) throws MessagingException {
+        // Thêm flag để bỏ qua cảnh báo
+        request.setIgnoreWarnings(true);
         MedicalRecordResponse response = medicalRecordService.createMedicalRecord(request);
         return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
@@ -41,6 +60,14 @@ public class MedicalRecordController {
     public ResponseEntity<ApiResponse<MedicalRecordResponse>> updateMedicalRecord(@PathVariable Long id, @RequestBody MedicalRecordRequest request) throws MessagingException {
         MedicalRecordResponse response = medicalRecordService.updateMedicalRecord(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, response));
+    }
+
+    // Endpoint cập nhật với kiểm tra thuốc
+    @PutMapping("/{id}/smart")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<MedicalRecordResponse>> updateSmartMedicalRecord(@PathVariable Long id, @RequestBody MedicalRecordRequest request) throws MessagingException {
+        MedicalRecordResponse response = medicalRecordService.updateMedicalRecordWithDrugCheck(id, request);
+        return ResponseEntity.ok(new ApiResponse<>(response.isSuccess(), response));
     }
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)

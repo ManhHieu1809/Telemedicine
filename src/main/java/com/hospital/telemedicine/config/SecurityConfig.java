@@ -77,6 +77,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").permitAll()
                 .requestMatchers("/index.html").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/api/drugs/**").hasAnyRole("DOCTOR", "PATIENT")
+                .requestMatchers("/api/drugs/analyze-**").hasRole("DOCTOR")
+                .requestMatchers("/api/drugs/check-interactions").hasRole("DOCTOR")
+                .requestMatchers("/api/medical-records/smart").hasRole("DOCTOR")
+                .requestMatchers("/api/medical-records/force").hasRole("DOCTOR")
                 .anyRequest().authenticated();
 
         http.authenticationProvider(authenticationProvider());

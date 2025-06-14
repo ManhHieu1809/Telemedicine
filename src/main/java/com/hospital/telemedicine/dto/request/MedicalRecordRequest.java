@@ -11,4 +11,9 @@ public class MedicalRecordRequest {
     private String diagnosis;
     private String notes;
     private List<PrescriptionDetailRequest> prescriptionDetails;
+
+    // Thêm field mới để điều khiển kiểm tra thuốc
+    private boolean ignoreWarnings = false; // Bỏ qua cảnh báo khi tạo đơn thuốc
+    private boolean checkDrugInteractions = true; // Kiểm tra tương tác thuốc
+    private boolean suggestGeneric = true; // Gợi ý thuốc generic
 }
