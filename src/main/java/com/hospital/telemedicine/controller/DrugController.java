@@ -2,6 +2,7 @@ package com.hospital.telemedicine.controller;
 
 import com.hospital.telemedicine.dto.request.MedicalRecordRequest;
 import com.hospital.telemedicine.dto.response.*;
+import com.hospital.telemedicine.service.DrugInteractionService;
 import com.hospital.telemedicine.service.SmartPrescriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/drugs")
@@ -18,7 +20,8 @@ public class DrugController {
 
     @Autowired
     private SmartPrescriptionService smartPrescriptionService;
-
+    @Autowired
+    private DrugInteractionService drugInteractionService;
     /**
      * Tìm kiếm thuốc
      */
@@ -113,7 +116,7 @@ public class DrugController {
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<List<DrugSuggestionResponse>>> getQuickSuggestions() {
         // Gợi ý một số thuốc phổ biến
-        List<String> commonSymptoms = List.of("đau đầu", "sốt", "cảm cúm", "đau bụng", "ho");
+        List<String> commonSymptoms = List.of("đau đầu", "sốt", "cảm cúm", "đau bụng", "ho", "tiêu hóa", "dị ứng");
         List<DrugSuggestionResponse> quickSuggestions = commonSymptoms.stream()
                 .flatMap(symptom -> smartPrescriptionService.suggestDrugsForDiagnosis(symptom).stream())
                 .distinct()
@@ -165,6 +168,147 @@ public class DrugController {
         stats.setLowRiskInteractions(0L);
 
         return ResponseEntity.ok(new ApiResponse<>(true, stats));
+    }
+
+    /**
+     * Test DDInter API connection
+     */
+    @GetMapping("/test-ddinter")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> testDDInterConnection() {
+        Map<String, Object> testResult = new HashMap<>();
+
+        try {
+            // Kiểm tra trạng thái API
+            Map<String, Boolean> apiStatus = drugInteractionService.checkApiStatus();
+            testResult.put("apiStatus", apiStatus);
+
+            // Test với một cặp thuốc mẫu
+            List<String> testDrugs = Arrays.asList("aspirin", "warfarin");
+            DrugInteractionResponse testInteraction = smartPrescriptionService.checkInteractions(testDrugs);
+
+            testResult.put("testInteraction", Map.of(
+                    "drugs", testDrugs,
+                    "hasInteractions", testInteraction.isHasInteractions(),
+                    "message", testInteraction.getMessage(),
+                    "interactionCount", testInteraction.getInteractions().size()
+            ));
+
+            // Test timestamp
+            testResult.put("timestamp", LocalDateTime.now());
+            testResult.put("success", true);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, testResult));
+
+        } catch (Exception e) {
+            testResult.put("error", e.getMessage());
+            testResult.put("success", false);
+            testResult.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.ok(new ApiResponse<>(false, testResult));
+        }
+    }
+
+    /**
+     * Kiểm tra tương tác với DDInter trực tiếp (for testing)
+     */
+    @PostMapping("/test-interactions")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<DrugInteractionResponse>> testDirectInteractions(
+            @RequestBody Map<String, List<String>> request) {
+
+        List<String> drugNames = request.get("drugs");
+        if (drugNames == null || drugNames.size() < 2) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, new DrugInteractionResponse(false,
+                            "Cần ít nhất 2 loại thuốc để test", Collections.emptyList(), Collections.emptyList()))
+            );
+        }
+
+        try {
+            DrugInteractionResponse result = smartPrescriptionService.checkInteractions(drugNames);
+            return ResponseEntity.ok(new ApiResponse<>(true, result));
+        } catch (Exception e) {
+            DrugInteractionResponse errorResult = new DrugInteractionResponse(false,
+                    "Lỗi khi test tương tác: " + e.getMessage(), Collections.emptyList(), Collections.emptyList());
+            return ResponseEntity.ok(new ApiResponse<>(false, errorResult));
+        }
+    }
+
+    /**
+     * Lấy thống kê về API usage
+     */
+    @GetMapping("/api-stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getApiStats() {
+        Map<String, Object> stats = new HashMap<>();
+
+        try {
+            // Kiểm tra trạng thái các API
+            Map<String, Boolean> apiStatus = drugInteractionService.checkApiStatus();
+            stats.put("apiStatus", apiStatus);
+
+            // Thống kê cơ bản
+            stats.put("enabledFeatures", Map.of(
+                    "drugInteractionCheck", true,
+                    "genericSuggestions", true,
+                    "ddinterIntegration", apiStatus.getOrDefault("ddinter", false),
+                    "rxnavIntegration", apiStatus.getOrDefault("rxnav", false)
+            ));
+
+            stats.put("lastChecked", LocalDateTime.now());
+
+            return ResponseEntity.ok(new ApiResponse<>(true, stats));
+
+        } catch (Exception e) {
+            stats.put("error", e.getMessage());
+            return ResponseEntity.ok(new ApiResponse<>(false, stats));
+        }
+    }
+
+    /**
+     * Test với các cặp thuốc phổ biến có tương tác
+     */
+    @GetMapping("/test-common-interactions")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> testCommonInteractions() {
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        // Danh sách các cặp thuốc phổ biến có tương tác
+        List<List<String>> testPairs = Arrays.asList(
+                Arrays.asList("warfarin", "aspirin"),
+                Arrays.asList("ibuprofen", "prednisone"),
+                Arrays.asList("lisinopril", "spironolactone"),
+                Arrays.asList("omeprazole", "clopidogrel"),
+                Arrays.asList("metformin", "contrast dye")
+        );
+
+        for (List<String> pair : testPairs) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("drugs", pair);
+
+            try {
+                DrugInteractionResponse interaction = smartPrescriptionService.checkInteractions(pair);
+                result.put("hasInteraction", interaction.isHasInteractions());
+                result.put("message", interaction.getMessage());
+                result.put("interactionCount", interaction.getInteractions().size());
+                result.put("status", "success");
+
+                if (interaction.isHasInteractions() && !interaction.getInteractions().isEmpty()) {
+                    DrugInteractionResponse.InteractionDetail detail = interaction.getInteractions().get(0);
+                    result.put("severity", detail.getSeverity());
+                    result.put("description", detail.getDescription());
+                }
+
+            } catch (Exception e) {
+                result.put("status", "error");
+                result.put("error", e.getMessage());
+            }
+
+            results.add(result);
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(true, results));
     }
 
     private Long extractUserId(UserDetails userDetails) {

@@ -28,8 +28,11 @@ public class DrugInteractionService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private DDInterService ddInterService;
+
     /**
-     * Tìm kiếm thuốc theo tên
+     * Tìm kiếm thuốc theo tên (sử dụng RxNav - vẫn hoạt động)
      */
     public List<DrugSuggestionResponse> searchDrugs(String drugName) {
         try {
@@ -71,100 +74,69 @@ public class DrugInteractionService {
     }
 
     /**
-     * Kiểm tra tương tác giữa các thuốc
+     * Kiểm tra tương tác giữa các thuốc - SỬ DỤNG DDINTER API
      */
     public DrugInteractionResponse checkDrugInteractions(List<String> rxcuis) {
         try {
-            if (rxcuis.size() < 2) {
-                return new DrugInteractionResponse(false, "Cần ít nhất 2 loại thuốc để kiểm tra tương tác",
-                        Collections.emptyList(), Collections.emptyList());
-            }
+            log.info("Checking drug interactions using DDInter API");
 
-            String rxcuiList = String.join("+", rxcuis);
-            String url = RXNAV_BASE_URL + "/interaction/list.json?rxcuis=" + rxcuiList;
+            // Chuyển đổi RXCUI thành tên thuốc nếu cần
+            List<String> drugNames = new ArrayList<>();
 
-            String response = restTemplate.getForObject(url, String.class);
-            JsonNode root = objectMapper.readTree(response);
-
-            List<DrugInteractionResponse.InteractionDetail> interactions = new ArrayList<>();
-            List<DrugInteractionResponse.AlternativeDrug> alternatives = new ArrayList<>();
-
-            if (root.has("fullInteractionTypeGroup")) {
-                JsonNode interactionGroups = root.get("fullInteractionTypeGroup");
-
-                if (interactionGroups.isArray()) {
-                    for (JsonNode group : interactionGroups) {
-                        if (group.has("fullInteractionType")) {
-                            JsonNode interactionTypes = group.get("fullInteractionType");
-
-                            if (interactionTypes.isArray()) {
-                                for (JsonNode interactionType : interactionTypes) {
-                                    if (interactionType.has("interactionPair")) {
-                                        JsonNode pairs = interactionType.get("interactionPair");
-
-                                        if (pairs.isArray()) {
-                                            for (JsonNode pair : pairs) {
-                                                DrugInteractionResponse.InteractionDetail detail =
-                                                        new DrugInteractionResponse.InteractionDetail();
-
-                                                // Lấy thông tin thuốc 1
-                                                if (pair.has("interactionConcept")) {
-                                                    JsonNode concepts = pair.get("interactionConcept");
-                                                    if (concepts.isArray() && concepts.size() >= 2) {
-                                                        detail.setDrug1Name(concepts.get(0).get("minConceptItem").get("name").asText());
-                                                        detail.setDrug1Rxcui(concepts.get(0).get("minConceptItem").get("rxcui").asText());
-                                                        detail.setDrug2Name(concepts.get(1).get("minConceptItem").get("name").asText());
-                                                        detail.setDrug2Rxcui(concepts.get(1).get("minConceptItem").get("rxcui").asText());
-                                                    }
-                                                }
-
-                                                // Lấy mô tả tương tác
-                                                if (pair.has("description")) {
-                                                    detail.setDescription(pair.get("description").asText());
-                                                }
-
-                                                // Lấy mức độ nghiêm trọng
-                                                if (pair.has("severity")) {
-                                                    detail.setSeverity(pair.get("severity").asText());
-                                                }
-
-                                                interactions.add(detail);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            for (String rxcui : rxcuis) {
+                // Nếu rxcui là số, cố gắng chuyển thành tên thuốc
+                if (rxcui.matches("\\d+")) {
+                    String drugName = getDrugNameFromRxcui(rxcui);
+                    if (drugName != null && !drugName.isEmpty()) {
+                        drugNames.add(drugName);
+                    } else {
+                        drugNames.add(rxcui); // Fallback nếu không tìm được tên
                     }
+                } else {
+                    drugNames.add(rxcui); // Đã là tên thuốc
                 }
             }
 
-            // Tìm thuốc thay thế nếu có tương tác nghiêm trọng
-            boolean hasHighRiskInteraction = interactions.stream()
-                    .anyMatch(interaction -> "high".equalsIgnoreCase(interaction.getSeverity()) ||
-                            "contraindicated".equalsIgnoreCase(interaction.getSeverity()));
+            // Sử dụng DDInter service để kiểm tra tương tác
+            DrugInteractionResponse ddinterResult = ddInterService.checkDrugInteractions(drugNames);
 
-            if (hasHighRiskInteraction) {
-                alternatives = findAlternativeDrugs(rxcuis);
+            if (ddinterResult.isHasInteractions()) {
+                log.info("Found {} interactions using DDInter", ddinterResult.getInteractions().size());
+            } else {
+                log.info("No interactions found using DDInter");
             }
 
-            return new DrugInteractionResponse(
-                    !interactions.isEmpty(),
-                    interactions.isEmpty() ? "Không phát hiện tương tác thuốc" :
-                            "Phát hiện " + interactions.size() + " tương tác thuốc",
-                    interactions,
-                    alternatives
-            );
+            return ddinterResult;
 
         } catch (Exception e) {
             log.error("Error checking drug interactions: ", e);
-            return new DrugInteractionResponse(false, "Lỗi khi kiểm tra tương tác thuốc: " + e.getMessage(),
+            return new DrugInteractionResponse(false,
+                    "Lỗi khi kiểm tra tương tác thuốc: " + e.getMessage(),
                     Collections.emptyList(), Collections.emptyList());
         }
     }
 
     /**
-     * Tìm thuốc generic (thuốc thay thế giá rẻ)
+     * Lấy tên thuốc từ RXCUI
+     */
+    private String getDrugNameFromRxcui(String rxcui) {
+        try {
+            String url = RXNAV_BASE_URL + "/rxcui/" + rxcui + "/properties.json";
+            String response = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(response);
+
+            if (root.has("properties")) {
+                JsonNode properties = root.get("properties");
+                return properties.get("name").asText();
+            }
+        } catch (Exception e) {
+            log.warn("Could not get drug name for RXCUI: {}", rxcui);
+        }
+        return null;
+    }
+
+    /**
+     * Tìm thuốc generic (sử dụng RxNav - vẫn hoạt động)
      */
     public List<GenericDrugResponse> findGenericAlternatives(String rxcui) {
         try {
@@ -215,7 +187,7 @@ public class DrugInteractionService {
     }
 
     /**
-     * Gợi ý thuốc theo chẩn đoán/bệnh
+     * Gợi ý thuốc theo chẩn đoán/bệnh (sử dụng RxNav + fallback)
      */
     public List<DrugSuggestionResponse> suggestDrugsByDiagnosis(String diagnosis) {
         try {
@@ -256,61 +228,6 @@ public class DrugInteractionService {
     }
 
     /**
-     * Tìm thuốc thay thế khi có tương tác
-     */
-    private List<DrugInteractionResponse.AlternativeDrug> findAlternativeDrugs(List<String> problematicRxcuis) {
-        List<DrugInteractionResponse.AlternativeDrug> alternatives = new ArrayList<>();
-
-        for (String rxcui : problematicRxcuis) {
-            try {
-                // Tìm thuốc cùng nhóm trị liệu
-                String url = RXCLASS_BASE_URL + "/class/byRxcui.json?rxcui=" + rxcui + "&relaSource=ATC";
-                String response = restTemplate.getForObject(url, String.class);
-                JsonNode root = objectMapper.readTree(response);
-
-                if (root.has("rxclassDrugInfoList") && root.get("rxclassDrugInfoList").has("rxclassDrugInfo")) {
-                    JsonNode drugInfos = root.get("rxclassDrugInfoList").get("rxclassDrugInfo");
-
-                    if (drugInfos.isArray() && drugInfos.size() > 0) {
-                        JsonNode firstDrugInfo = drugInfos.get(0);
-                        String classId = firstDrugInfo.get("rxclassMinConceptItem").get("classId").asText();
-
-                        // Tìm thuốc khác trong cùng nhóm
-                        String altUrl = RXCLASS_BASE_URL + "/classMembers.json?classId=" + classId + "&relaSource=ATC";
-                        String altResponse = restTemplate.getForObject(altUrl, String.class);
-                        JsonNode altRoot = objectMapper.readTree(altResponse);
-
-                        if (altRoot.has("drugMemberGroup") && altRoot.get("drugMemberGroup").has("drugMember")) {
-                            JsonNode members = altRoot.get("drugMemberGroup").get("drugMember");
-
-                            if (members.isArray()) {
-                                for (JsonNode member : members) {
-                                    String altRxcui = member.get("minConcept").get("rxcui").asText();
-                                    if (!problematicRxcuis.contains(altRxcui)) {
-                                        DrugInteractionResponse.AlternativeDrug alternative =
-                                                new DrugInteractionResponse.AlternativeDrug();
-                                        alternative.setRxcui(altRxcui);
-                                        alternative.setName(member.get("minConcept").get("name").asText());
-                                        alternative.setOriginalRxcui(rxcui);
-                                        alternative.setReason("Thuốc cùng nhóm trị liệu, ít tương tác hơn");
-                                        alternatives.add(alternative);
-
-                                        if (alternatives.size() >= 10) break; // Giới hạn số lượng
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error finding alternatives for rxcui: " + rxcui, e);
-            }
-        }
-
-        return alternatives;
-    }
-
-    /**
      * Tìm thuốc phổ biến theo từ khóa (fallback method)
      */
     private List<DrugSuggestionResponse> searchCommonDrugsByKeyword(String keyword) {
@@ -346,7 +263,7 @@ public class DrugInteractionService {
     }
 
     /**
-     * Lấy thông tin chi tiết thuốc
+     * Lấy thông tin chi tiết thuốc (sử dụng RxNav)
      */
     public DrugSuggestionResponse getDrugDetails(String rxcui) {
         try {
@@ -369,5 +286,36 @@ public class DrugInteractionService {
             log.error("Error getting drug details: ", e);
             return null;
         }
+    }
+
+    /**
+     * Kiểm tra trạng thái của các API
+     */
+    public Map<String, Boolean> checkApiStatus() {
+        Map<String, Boolean> status = new HashMap<>();
+
+        // Kiểm tra RxNav
+        try {
+            String url = RXNAV_BASE_URL + "/allstatus.json";
+            String response = restTemplate.getForObject(url, String.class);
+            status.put("rxnav", response != null);
+        } catch (Exception e) {
+            status.put("rxnav", false);
+        }
+
+        // Kiểm tra DDInter
+        status.put("ddinter", ddInterService.isDDInterAvailable());
+
+        return status;
+    }
+
+    /**
+     * Phương thức tương thích ngược cho các service khác
+     * @deprecated Sử dụng checkDrugInteractions với tên thuốc thay vì RXCUI
+     */
+    @Deprecated
+    public DrugInteractionResponse checkDrugInteractionsLegacy(List<String> rxcuis) {
+        log.warn("Using legacy drug interaction check method. Consider updating to use drug names directly.");
+        return checkDrugInteractions(rxcuis);
     }
 }

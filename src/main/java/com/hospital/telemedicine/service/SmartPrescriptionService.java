@@ -42,6 +42,7 @@ public class SmartPrescriptionService {
             List<String> drugNames = request.getPrescriptionDetails().stream()
                     .map(PrescriptionDetailRequest::getMedicationName)
                     .filter(Objects::nonNull)
+                    .filter(name -> !name.trim().isEmpty())
                     .collect(Collectors.toList());
 
             if (drugNames.isEmpty()) {
@@ -50,33 +51,42 @@ public class SmartPrescriptionService {
                 return response;
             }
 
-            // 2. Tìm RXCUI cho các thuốc
+            log.info("Analyzing prescription with {} drugs: {}", drugNames.size(), drugNames);
+
+            // 2. Tìm RXCUI cho các thuốc (để sử dụng cho generic alternatives)
             Map<String, String> drugRxcuiMap = new HashMap<>();
-            List<String> rxcuis = new ArrayList<>();
+            List<String> validDrugNames = new ArrayList<>();
 
             for (String drugName : drugNames) {
                 List<DrugSuggestionResponse> searchResults = drugInteractionService.searchDrugs(drugName);
                 if (!searchResults.isEmpty()) {
                     String rxcui = searchResults.get(0).getRxcui();
                     drugRxcuiMap.put(drugName, rxcui);
-                    rxcuis.add(rxcui);
+                    validDrugNames.add(drugName);
+                    log.debug("Found RXCUI {} for drug {}", rxcui, drugName);
                 } else {
-                    // Cảnh báo thuốc không tìm thấy
+                    // Cảnh báo thuốc không tìm thấy trong database
                     warnings.add(new SmartPrescriptionResponse.PrescriptionWarning(
                             "NOT_FOUND", "MODERATE",
-                            "Không tìm thấy thông tin thuốc: " + drugName,
+                            "Không tìm thấy thông tin thuốc trong cơ sở dữ liệu: " + drugName,
                             drugName,
                             "Vui lòng kiểm tra lại tên thuốc hoặc nhập tên khác"
                     ));
+                    // Vẫn thêm vào danh sách để kiểm tra tương tác
+                    validDrugNames.add(drugName);
+                    log.warn("Drug not found in RxNav database: {}", drugName);
                 }
             }
 
-            // 3. Kiểm tra tương tác thuốc
+            // 3. Kiểm tra tương tác thuốc sử dụng DDInter API
             DrugInteractionResponse interactionCheck = null;
-            if (rxcuis.size() >= 2) {
-                interactionCheck = drugInteractionService.checkDrugInteractions(rxcuis);
+            if (validDrugNames.size() >= 2) {
+                log.info("Checking drug interactions for {} drugs using DDInter", validDrugNames.size());
+                interactionCheck = drugInteractionService.checkDrugInteractions(validDrugNames);
 
                 if (interactionCheck.isHasInteractions()) {
+                    log.info("Found {} drug interactions", interactionCheck.getInteractions().size());
+
                     for (DrugInteractionResponse.InteractionDetail interaction : interactionCheck.getInteractions()) {
                         String severity = mapSeverityLevel(interaction.getSeverity());
                         warnings.add(new SmartPrescriptionResponse.PrescriptionWarning(
@@ -84,37 +94,69 @@ public class SmartPrescriptionService {
                                 String.format("Tương tác giữa %s và %s: %s",
                                         interaction.getDrug1Name(), interaction.getDrug2Name(), interaction.getDescription()),
                                 interaction.getDrug1Name() + " + " + interaction.getDrug2Name(),
-                                generateInteractionRecommendation(interaction)
+                                interaction.getRecommendation() != null ?
+                                        interaction.getRecommendation() :
+                                        generateInteractionRecommendation(interaction)
                         ));
                     }
+                } else {
+                    log.info("No drug interactions found");
                 }
+            } else {
+                log.info("Less than 2 drugs, skipping interaction check");
             }
 
-            // 4. Tìm thuốc generic thay thế
+            // 4. Tìm thuốc generic thay thế (sử dụng RxNav)
             for (Map.Entry<String, String> entry : drugRxcuiMap.entrySet()) {
-                List<GenericDrugResponse> generics = drugInteractionService.findGenericAlternatives(entry.getValue());
-                genericAlternatives.addAll(generics);
+                try {
+                    List<GenericDrugResponse> generics = drugInteractionService.findGenericAlternatives(entry.getValue());
+                    if (!generics.isEmpty()) {
+                        log.debug("Found {} generic alternatives for {}", generics.size(), entry.getKey());
+                        genericAlternatives.addAll(generics);
+                    }
+                } catch (Exception e) {
+                    log.warn("Error finding generic alternatives for {}: {}", entry.getKey(), e.getMessage());
+                }
             }
 
             // 5. Gợi ý thuốc theo chẩn đoán
             if (request.getDiagnosis() != null && !request.getDiagnosis().trim().isEmpty()) {
-                List<DrugSuggestionResponse> diagnosisSuggestions =
-                        drugInteractionService.suggestDrugsByDiagnosis(request.getDiagnosis());
-                suggestions.addAll(diagnosisSuggestions);
+                try {
+                    List<DrugSuggestionResponse> diagnosisSuggestions =
+                            drugInteractionService.suggestDrugsByDiagnosis(request.getDiagnosis());
+                    suggestions.addAll(diagnosisSuggestions);
+                    log.debug("Found {} drug suggestions for diagnosis: {}",
+                            diagnosisSuggestions.size(), request.getDiagnosis());
+                } catch (Exception e) {
+                    log.warn("Error getting drug suggestions for diagnosis {}: {}",
+                            request.getDiagnosis(), e.getMessage());
+                }
             }
 
             // 6. Kiểm tra lịch sử dị ứng thuốc của bệnh nhân
-            warnings.addAll(checkPatientAllergies(request.getPatientId(), drugNames));
+            try {
+                warnings.addAll(checkPatientAllergies(request.getPatientId(), validDrugNames));
+            } catch (Exception e) {
+                log.warn("Error checking patient allergies: {}", e.getMessage());
+            }
 
             // 7. Kiểm tra chống chỉ định dựa trên tiền sử bệnh
-            warnings.addAll(checkContraindications(request.getPatientId(), drugNames, request.getDiagnosis()));
+            try {
+                warnings.addAll(checkContraindications(request.getPatientId(), validDrugNames, request.getDiagnosis()));
+            } catch (Exception e) {
+                log.warn("Error checking contraindications: {}", e.getMessage());
+            }
 
+            // 8. Tạo response
             response.setSuccess(true);
             response.setMessage(generateAnalysisMessage(warnings, genericAlternatives.size()));
             response.setWarnings(warnings);
             response.setSuggestions(suggestions);
             response.setGenericAlternatives(genericAlternatives);
             response.setInteractionCheck(interactionCheck);
+
+            log.info("Prescription analysis completed. Warnings: {}, Suggestions: {}, Generics: {}",
+                    warnings.size(), suggestions.size(), genericAlternatives.size());
 
             return response;
 
@@ -126,6 +168,7 @@ public class SmartPrescriptionService {
             return errorResponse;
         }
     }
+
 
     /**
      * Gợi ý thuốc theo chẩn đoán
@@ -149,21 +192,25 @@ public class SmartPrescriptionService {
      * Kiểm tra tương tác thuốc
      */
     public DrugInteractionResponse checkInteractions(List<String> drugNames) {
-        List<String> rxcuis = new ArrayList<>();
-
-        for (String drugName : drugNames) {
-            List<DrugSuggestionResponse> searchResults = drugInteractionService.searchDrugs(drugName);
-            if (!searchResults.isEmpty()) {
-                rxcuis.add(searchResults.get(0).getRxcui());
-            }
+        if (drugNames == null || drugNames.size() < 2) {
+            return new DrugInteractionResponse(false, "Cần ít nhất 2 loại thuốc để kiểm tra tương tác",
+                    Collections.emptyList(), Collections.emptyList());
         }
 
-        if (rxcuis.size() >= 2) {
-            return drugInteractionService.checkDrugInteractions(rxcuis);
+        // Lọc và làm sạch tên thuốc
+        List<String> cleanDrugNames = drugNames.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .collect(Collectors.toList());
+
+        if (cleanDrugNames.size() < 2) {
+            return new DrugInteractionResponse(false, "Cần ít nhất 2 loại thuốc hợp lệ để kiểm tra tương tác",
+                    Collections.emptyList(), Collections.emptyList());
         }
 
-        return new DrugInteractionResponse(false, "Cần ít nhất 2 loại thuốc để kiểm tra tương tác",
-                Collections.emptyList(), Collections.emptyList());
+        log.info("Checking interactions for drugs: {}", cleanDrugNames);
+        return drugInteractionService.checkDrugInteractions(cleanDrugNames);
     }
 
     /**
