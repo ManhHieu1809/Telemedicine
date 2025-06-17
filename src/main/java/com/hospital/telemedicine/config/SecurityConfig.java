@@ -75,8 +75,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/api/appointments/doctor/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll()
-                .requestMatchers("/index.html").permitAll()
+
+                // Static resources - VERY IMPORTANT FOR ADMIN PANEL
                 .requestMatchers("/admin/**").permitAll()
+                .requestMatchers("/static/**").permitAll()
+                .requestMatchers("/css/**").permitAll()
+                .requestMatchers("/js/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/index.html").permitAll()
+
                 .requestMatchers("/favicon.ico").permitAll()
                 .requestMatchers("/api/drugs/**").hasAnyRole("DOCTOR", "PATIENT")
                 .requestMatchers("/api/drugs/analyze-**").hasRole("DOCTOR")
