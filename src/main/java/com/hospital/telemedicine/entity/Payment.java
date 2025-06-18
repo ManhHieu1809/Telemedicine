@@ -33,6 +33,9 @@ public class Payment {
     @Column(name="created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name="transaction_id", unique = true, nullable = false)
+    private String transactionId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Osler AI Dashboard - Admin</title>
+    <title>Admin Dashboard - Telemedicine System</title>
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,28 +17,31 @@
             font-family: 'Inter', sans-serif;
         }
 
-        .osler-green {
-            background: linear-gradient(135deg, #7CB342 0%, #8BC34A 50%, #9CCC65 100%);
+        .admin-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .osler-sidebar {
-            background: linear-gradient(180deg, #7CB342 0%, #689F38 100%);
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        .dark-card {
-            background: linear-gradient(135deg, #2E3B2E 0%, #1C2A1C 100%);
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
         }
 
-        .schedule-card {
-            background: linear-gradient(135deg, #34495E 0%, #2C3E50 100%);
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(203, 213, 225, 0.3);
         }
+
+        .status-active { @apply bg-green-100 text-green-800; }
+        .status-pending { @apply bg-yellow-100 text-yellow-800; }
+        .status-inactive { @apply bg-red-100 text-red-800; }
 
         .animate-fade-in {
             animation: fadeIn 0.6s ease-out forwards;
@@ -49,116 +52,935 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .sidebar-icon {
-            transition: all 0.3s ease;
+        .table-row:hover {
+            background-color: #f8fafc;
         }
 
-        .sidebar-icon:hover {
-            transform: scale(1.1);
-            filter: brightness(1.2);
-        }
-
-        .nav-active {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-        }
-
-        .osler-btn {
-            background: linear-gradient(135deg, #7CB342 0%, #8BC34A 100%);
-            border: none;
+        .admin-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border: none;
             transition: all 0.3s ease;
         }
 
-        .osler-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(124, 179, 66, 0.4);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        .pill-badge {
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .heart-rate-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .body-part {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .body-part:hover {
-            transform: scale(1.1);
-            filter: brightness(1.2);
+        .admin-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
 <div id="root"></div>
 
-<!-- Load Components -->
-<script src="./js/components/Sidebar.js"></script>
-<script src="./js/components/Header.js"></script>
-<script src="./js/components/Dashboard.js"></script>
-<script src="./js/components/Medical.js"></script>
-<script src="./js/components/Diagnostics.js"></script>
-<script src="./js/components/EHR.js"></script>
-<script src="./js/components/AIAnalysis.js"></script>
-<script src="./js/components/Settings.js"></script>
-
-<!-- Main App -->
 <script type="text/babel">
     const { useState, useEffect } = React;
 
-    const App = () => {
-        const [activeTab, setActiveTab] = useState('diagnostics');
-        const [user, setUser] = useState({
-            name: 'Bocchi Rock',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b9fc6168?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80'
+    // API Service
+    const api = {
+        baseURL: 'http://localhost:8080/api',
+
+        async request(endpoint, options = {}) {
+            const token = localStorage.getItem('adminToken');
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { Authorization: `Bearer ${token}` }),
+                    ...options.headers,
+                },
+                ...options,
+            };
+
+            try {
+                const response = await fetch(`${this.baseURL}${endpoint}`, config);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        },
+
+        // Admin APIs
+        getSystemReport: () => api.request('/admin/reports'),
+        getUserActivities: () => api.request('/admin/user-activities'),
+        getAllDoctors: () => api.request('/users/doctors'),
+        getAllPatients: () => api.request('/admin/users/patients'),
+        createDoctor: (data) => api.request('/auth/create-doctor', { method: 'POST', body: JSON.stringify(data) }),
+        updateDoctor: (id, data) => api.request(`/admin/users/doctors/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        deleteDoctor: (id) => api.request(`/admin/users/doctors/${id}`, { method: 'DELETE' }),
+        updatePatient: (id, data) => api.request(`/admin/users/patients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        deletePatient: (id) => api.request(`/admin/users/patients/${id}`, { method: 'DELETE' }),
+        deleteReview: (id) => api.request(`/admin/reviews/${id}`, { method: 'DELETE' }),
+        deleteChatMessage: (id) => api.request(`/admin/chat-messages/${id}`, { method: 'DELETE' }),
+    };
+
+    // Sidebar Component
+    const Sidebar = ({ activeTab, setActiveTab }) => {
+        const menuItems = [
+            { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
+            { id: 'users', icon: 'fas fa-users', label: 'Quản lý người dùng' },
+            { id: 'doctors', icon: 'fas fa-user-md', label: 'Quản lý bác sĩ' },
+            { id: 'patients', icon: 'fas fa-user-injured', label: 'Quản lý bệnh nhân' },
+            { id: 'appointments', icon: 'fas fa-calendar-check', label: 'Lịch hẹn' },
+            { id: 'reviews', icon: 'fas fa-star', label: 'Đánh giá' },
+            { id: 'chat', icon: 'fas fa-comments', label: 'Tin nhắn' },
+            { id: 'reports', icon: 'fas fa-file-alt', label: 'Báo cáo' },
+            { id: 'activities', icon: 'fas fa-history', label: 'Hoạt động' },
+            { id: 'settings', icon: 'fas fa-cog', label: 'Cài đặt' }
+        ];
+
+        return (
+            <div className="w-64 sidebar-gradient shadow-xl">
+                <div className="p-6">
+                    <div className="flex items-center space-x-3 mb-8">
+                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i className="fas fa-hospital text-blue-600 text-xl"></i>
+                        </div>
+                        <div className="text-white">
+                            <h1 className="text-lg font-bold">Telemedicine</h1>
+                            <p className="text-xs opacity-75">Admin Panel</p>
+                        </div>
+                    </div>
+
+                    <nav className="space-y-2">
+                        {menuItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                    activeTab === item.id
+                                        ? 'bg-white bg-opacity-20 text-white'
+                                        : 'text-white text-opacity-75 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                                }`}
+                            >
+                                <i className={`${item.icon} w-5`}></i>
+                                <span className="text-sm font-medium">{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+            </div>
+        );
+    };
+
+    // Header Component
+    const Header = () => {
+        return (
+            <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                        <p className="text-sm text-gray-600">Quản lý hệ thống telemedicine</p>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                        <div className="relative">
+                            <button className="p-2 text-gray-400 hover:text-gray-600">
+                                <i className="fas fa-bell text-lg"></i>
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">3</span>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-gray-900">Admin User</p>
+                                <p className="text-xs text-gray-500">Quản trị viên</p>
+                            </div>
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                                <i className="fas fa-user text-gray-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+        );
+    };
+
+    // Dashboard Component
+    const Dashboard = () => {
+        const [stats, setStats] = useState({
+            totalAppointments: 0,
+            totalRevenue: 0,
+            totalUsers: 0,
+            totalDoctors: 0
         });
 
-        const renderContent = () => {
-            switch (activeTab) {
-                case 'diagnostics':
-                    return <Diagnostics />;
-                case 'medical':
-                    return <Medical />;
-                case 'ehr':
-                    return <EHR />;
-                case 'ai-analysis':
-                    return <AIAnalysis />;
-                case 'dashboard':
-                    return <Dashboard />;
-                case 'settings':
-                    return <Settings />;
-                default:
-                    return <Diagnostics />;
+        useEffect(() => {
+            loadDashboardData();
+        }, []);
+
+        const loadDashboardData = async () => {
+            try {
+                const report = await api.getSystemReport();
+                setStats({
+                    totalAppointments: report.totalAppointments || 0,
+                    totalRevenue: report.totalRevenue || 0,
+                    totalUsers: 1247, // Mock data
+                    totalDoctors: 85
+                });
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        };
+
+        const statCards = [
+            { title: 'Tổng lịch hẹn', value: stats.totalAppointments, icon: 'fas fa-calendar-check', color: 'text-blue-600', bg: 'bg-blue-100' },
+            { title: 'Doanh thu', value: `$${stats.totalRevenue.toLocaleString()}`, icon: 'fas fa-dollar-sign', color: 'text-green-600', bg: 'bg-green-100' },
+            { title: 'Người dùng', value: stats.totalUsers.toLocaleString(), icon: 'fas fa-users', color: 'text-purple-600', bg: 'bg-purple-100' },
+            { title: 'Bác sĩ', value: stats.totalDoctors, icon: 'fas fa-user-md', color: 'text-orange-600', bg: 'bg-orange-100' }
+        ];
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {statCards.map((stat, index) => (
+                        <div key={index} className="stat-card p-6 rounded-xl hover-lift transition-all duration-300">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                                    <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                                </div>
+                                <div className={`p-3 rounded-lg ${stat.bg}`}>
+                                    <i className={`${stat.icon} text-xl ${stat.color}`}></i>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-xl card-shadow">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động gần đây</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i className="fas fa-user-plus text-green-600 text-sm"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">Bệnh nhân mới đăng ký</p>
+                                    <p className="text-xs text-gray-500">5 phút trước</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i className="fas fa-calendar text-blue-600 text-sm"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">Lịch hẹn mới được tạo</p>
+                                    <p className="text-xs text-gray-500">10 phút trước</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i className="fas fa-star text-purple-600 text-sm"></i>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">Đánh giá mới từ bệnh nhân</p>
+                                    <p className="text-xs text-gray-500">15 phút trước</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl card-shadow">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Thống kê nhanh</h3>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Lịch hẹn hôm nay</span>
+                                <span className="text-lg font-semibold text-gray-900">24</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Bệnh nhân mới tháng này</span>
+                                <span className="text-lg font-semibold text-gray-900">156</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Đánh giá trung bình</span>
+                                <span className="text-lg font-semibold text-gray-900">4.8⭐</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Tỷ lệ hoàn thành</span>
+                                <span className="text-lg font-semibold text-gray-900">92%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Doctor Management Component
+    const DoctorManagement = () => {
+        const [doctors, setDoctors] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [showCreateModal, setShowCreateModal] = useState(false);
+        const [selectedDoctor, setSelectedDoctor] = useState(null);
+
+        useEffect(() => {
+            loadDoctors();
+        }, []);
+
+        const loadDoctors = async () => {
+            try {
+                setLoading(true);
+                const response = await api.getAllDoctors();
+                setDoctors(response.data || []);
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const handleDeleteDoctor = async (doctorId) => {
+            if (confirm('Bạn có chắc chắn muốn xóa bác sĩ này?')) {
+                try {
+                    await api.deleteDoctor(doctorId);
+                    loadDoctors();
+                } catch (error) {
+                    alert('Lỗi khi xóa bác sĩ: ' + error.message);
+                }
+            }
+        };
+
+        const CreateDoctorModal = () => {
+            const [formData, setFormData] = useState({
+                username: '',
+                email: '',
+                password: '',
+                fullName: '',
+                specialty: '',
+                experience: '',
+                phone: '',
+                address: ''
+            });
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    await api.createDoctor(formData);
+                    setShowCreateModal(false);
+                    loadDoctors();
+                    alert('Tạo tài khoản bác sĩ thành công!');
+                } catch (error) {
+                    alert('Lỗi khi tạo bác sĩ: ' + error.message);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Tạo tài khoản bác sĩ mới</h2>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Chuyên khoa</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={formData.specialty}
+                                        onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Kinh nghiệm (năm)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={formData.experience}
+                                        onChange={(e) => setFormData({...formData, experience: parseInt(e.target.value)})}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                                <textarea
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    rows="2"
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                ></textarea>
+                            </div>
+
+                            <div className="flex space-x-4 pt-4">
+                                <button
+                                    type="submit"
+                                    className="flex-1 admin-btn px-4 py-2 rounded-lg font-medium"
+                                >
+                                    Tạo tài khoản
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300"
+                                >
+                                    Hủy
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-900">Quản lý bác sĩ</h2>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="admin-btn px-4 py-2 rounded-lg font-medium"
+                    >
+                        <i className="fas fa-plus mr-2"></i>
+                        Thêm bác sĩ mới
+                    </button>
+                </div>
+
+                <div className="bg-white rounded-xl card-shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                            <tr>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Bác sĩ</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Chuyên khoa</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Kinh nghiệm</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Điện thoại</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="5" className="text-center py-8">
+                                        <i className="fas fa-spinner fa-spin text-gray-400"></i>
+                                        <p className="text-gray-500 mt-2">Đang tải...</p>
+                                    </td>
+                                </tr>
+                            ) : doctors.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="text-center py-8">
+                                        <p className="text-gray-500">Chưa có bác sĩ nào</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                doctors.map((doctor) => (
+                                    <tr key={doctor.id} className="table-row border-t border-gray-200">
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                                    <i className="fas fa-user-md text-gray-600"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-900">{doctor.fullName || 'N/A'}</p>
+                                                    <p className="text-sm text-gray-500">{doctor.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-gray-700">{doctor.specialty || 'N/A'}</td>
+                                        <td className="py-4 px-6 text-gray-700">{doctor.experience || 0} năm</td>
+                                        <td className="py-4 px-6 text-gray-700">{doctor.phone || 'N/A'}</td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => setSelectedDoctor(doctor)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDoctor(doctor.id)}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    title="Xóa"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {showCreateModal && <CreateDoctorModal />}
+            </div>
+        );
+    };
+
+    // System Reports Component
+    const SystemReports = () => {
+        const [report, setReport] = useState(null);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            loadReports();
+        }, []);
+
+        const loadReports = async () => {
+            try {
+                setLoading(true);
+                const response = await api.getSystemReport();
+                setReport(response);
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (loading) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <i className="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
+                    <p className="text-gray-500 ml-3">Đang tải báo cáo...</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <h2 className="text-2xl font-bold text-gray-900">Báo cáo hệ thống</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-xl card-shadow">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tổng quan</h3>
+                        <div className="space-y-3">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Tổng lịch hẹn:</span>
+                                <span className="font-semibold">{report?.totalAppointments || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Tổng doanh thu:</span>
+                                <span className="font-semibold">${report?.totalRevenue?.toLocaleString() || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl card-shadow">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Đánh giá bác sĩ</h3>
+                        <div className="space-y-3">
+                            {report?.doctorRatings?.slice(0, 3).map((rating, index) => (
+                                <div key={index} className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600">{rating.fullName}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="text-sm font-medium">{rating.averageRating?.toFixed(1)}</span>
+                                        <span className="text-yellow-500">⭐</span>
+                                    </div>
+                                </div>
+                            )) || <p className="text-gray-500">Chưa có dữ liệu</p>}
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl card-shadow">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động</h3>
+                        <div className="space-y-3">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Hôm nay:</span>
+                                <span className="font-semibold">24 lịch hẹn</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Tuần này:</span>
+                                <span className="font-semibold">156 lịch hẹn</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Tháng này:</span>
+                                <span className="font-semibold">632 lịch hẹn</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // User Activities Component
+    const UserActivities = () => {
+        const [activities, setActivities] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            loadActivities();
+        }, []);
+
+        const loadActivities = async () => {
+            try {
+                setLoading(true);
+                const response = await api.getUserActivities();
+                setActivities(response || []);
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const getActivityIcon = (activityType) => {
+            switch (activityType) {
+                case 'LOGIN': return 'fas fa-sign-in-alt text-green-600';
+                case 'REGISTER': return 'fas fa-user-plus text-blue-600';
+                case 'APPOINTMENT': return 'fas fa-calendar text-purple-600';
+                case 'UPDATE_PROFILE': return 'fas fa-edit text-orange-600';
+                case 'DELETE_ACCOUNT': return 'fas fa-trash text-red-600';
+                default: return 'fas fa-circle text-gray-600';
             }
         };
 
         return (
-            <div className="h-screen flex bg-gray-50">
+            <div className="space-y-6 animate-fade-in">
+                <h2 className="text-2xl font-bold text-gray-900">Hoạt động người dùng</h2>
+
+                <div className="bg-white rounded-xl card-shadow overflow-hidden">
+                    <div className="p-6 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Lịch sử hoạt động</h3>
+                    </div>
+
+                    <div className="divide-y divide-gray-200">
+                        {loading ? (
+                            <div className="p-6 text-center">
+                                <i className="fas fa-spinner fa-spin text-gray-400"></i>
+                                <p className="text-gray-500 mt-2">Đang tải...</p>
+                            </div>
+                        ) : activities.length === 0 ? (
+                            <div className="p-6 text-center">
+                                <p className="text-gray-500">Chưa có hoạt động nào</p>
+                            </div>
+                        ) : (
+                            activities.map((activity, index) => (
+                                <div key={index} className="p-6 flex items-center space-x-4">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                        <i className={getActivityIcon(activity.activityType)}></i>
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-medium text-gray-900">{activity.description}</p>
+                                        <p className="text-sm text-gray-500">
+                                            {activity.username} • {new Date(activity.timestamp).toLocaleString('vi-VN')}
+                                        </p>
+                                    </div>
+                                    <span className="text-xs text-gray-400">{activity.activityType}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Patient Management Component
+    const PatientManagement = () => {
+        const [patients, setPatients] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            // Mock data since getAllPatients endpoint might not be fully implemented
+            setLoading(false);
+            setPatients([
+                { id: 1, fullName: 'Nguyễn Văn A', email: 'nguyenvana@email.com', phone: '0901234567', address: 'Hà Nội', gender: 'MALE' },
+                { id: 2, fullName: 'Trần Thị B', email: 'tranthib@email.com', phone: '0901234568', address: 'TP.HCM', gender: 'FEMALE' },
+                { id: 3, fullName: 'Lê Văn C', email: 'levanc@email.com', phone: '0901234569', address: 'Đà Nẵng', gender: 'MALE' }
+            ]);
+        }, []);
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <h2 className="text-2xl font-bold text-gray-900">Quản lý bệnh nhân</h2>
+
+                <div className="bg-white rounded-xl card-shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                            <tr>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Bệnh nhân</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Giới tính</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Điện thoại</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Địa chỉ</th>
+                                <th className="text-left py-3 px-6 font-medium text-gray-700">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {patients.map((patient) => (
+                                <tr key={patient.id} className="table-row border-t border-gray-200">
+                                    <td className="py-4 px-6">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <i className="fas fa-user text-gray-600"></i>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-gray-900">{patient.fullName}</p>
+                                                <p className="text-sm text-gray-500">{patient.email}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-6 text-gray-700">
+                                        {patient.gender === 'MALE' ? 'Nam' : patient.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                                    </td>
+                                    <td className="py-4 px-6 text-gray-700">{patient.phone}</td>
+                                    <td className="py-4 px-6 text-gray-700">{patient.address}</td>
+                                    <td className="py-4 px-6">
+                                        <div className="flex space-x-2">
+                                            <button className="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
+                                                <i className="fas fa-eye"></i>
+                                            </button>
+                                            <button className="text-green-600 hover:text-green-800" title="Chỉnh sửa">
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Content Management Component (Reviews & Chat)
+    const ContentManagement = () => {
+        const [activeTab, setActiveTab] = useState('reviews');
+        const [reviews, setReviews] = useState([]);
+        const [messages, setMessages] = useState([]);
+
+        useEffect(() => {
+            // Mock data for reviews
+            setReviews([
+                { id: 1, patientName: 'Nguyễn Văn A', doctorName: 'BS. Trần Văn B', rating: 5, comment: 'Bác sĩ rất tận tâm', createdAt: '2024-01-15' },
+                { id: 2, patientName: 'Trần Thị C', doctorName: 'BS. Lê Thị D', rating: 4, comment: 'Dịch vụ tốt', createdAt: '2024-01-14' },
+                { id: 3, patientName: 'Lê Văn E', doctorName: 'BS. Phạm Văn F', rating: 3, comment: 'Bình thường', createdAt: '2024-01-13' }
+            ]);
+
+            // Mock data for messages
+            setMessages([
+                { id: 1, senderName: 'Nguyễn Văn A', receiverName: 'BS. Trần Văn B', content: 'Xin chào bác sĩ', sentAt: '2024-01-15 10:30' },
+                { id: 2, senderName: 'BS. Trần Văn B', receiverName: 'Nguyễn Văn A', content: 'Chào bạn, tôi có thể giúp gì?', sentAt: '2024-01-15 10:32' },
+                { id: 3, senderName: 'Trần Thị C', receiverName: 'BS. Lê Thị D', content: 'Cảm ơn bác sĩ', sentAt: '2024-01-14 15:20' }
+            ]);
+        }, []);
+
+        const handleDeleteReview = async (reviewId) => {
+            if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+                try {
+                    await api.deleteReview(reviewId);
+                    setReviews(reviews.filter(review => review.id !== reviewId));
+                    alert('Xóa đánh giá thành công!');
+                } catch (error) {
+                    alert('Lỗi khi xóa đánh giá: ' + error.message);
+                }
+            }
+        };
+
+        const handleDeleteMessage = async (messageId) => {
+            if (confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) {
+                try {
+                    await api.deleteChatMessage(messageId);
+                    setMessages(messages.filter(msg => msg.id !== messageId));
+                    alert('Xóa tin nhắn thành công!');
+                } catch (error) {
+                    alert('Lỗi khi xóa tin nhắn: ' + error.message);
+                }
+            }
+        };
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <h2 className="text-2xl font-bold text-gray-900">Kiểm duyệt nội dung</h2>
+
+                <div className="flex space-x-4 border-b border-gray-200">
+                    <button
+                        onClick={() => setActiveTab('reviews')}
+                        className={`pb-2 px-1 font-medium ${activeTab === 'reviews'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Đánh giá ({reviews.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('messages')}
+                        className={`pb-2 px-1 font-medium ${activeTab === 'messages'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Tin nhắn ({messages.length})
+                    </button>
+                </div>
+
+                {activeTab === 'reviews' && (
+                    <div className="bg-white rounded-xl card-shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Bệnh nhân</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Bác sĩ</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Đánh giá</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Nhận xét</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Ngày</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Thao tác</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {reviews.map((review) => (
+                                    <tr key={review.id} className="table-row border-t border-gray-200">
+                                        <td className="py-4 px-6 text-gray-900">{review.patientName}</td>
+                                        <td className="py-4 px-6 text-gray-900">{review.doctorName}</td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center">
+                                                <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                                                <span className="ml-2 text-sm text-gray-600">({review.rating}/5)</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-gray-700 max-w-xs truncate">{review.comment}</td>
+                                        <td className="py-4 px-6 text-gray-500 text-sm">{review.createdAt}</td>
+                                        <td className="py-4 px-6">
+                                            <button
+                                                onClick={() => handleDeleteReview(review.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Xóa đánh giá"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'messages' && (
+                    <div className="bg-white rounded-xl card-shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Người gửi</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Người nhận</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Nội dung</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Thời gian</th>
+                                    <th className="text-left py-3 px-6 font-medium text-gray-700">Thao tác</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {messages.map((message) => (
+                                    <tr key={message.id} className="table-row border-t border-gray-200">
+                                        <td className="py-4 px-6 text-gray-900">{message.senderName}</td>
+                                        <td className="py-4 px-6 text-gray-900">{message.receiverName}</td>
+                                        <td className="py-4 px-6 text-gray-700 max-w-xs truncate">{message.content}</td>
+                                        <td className="py-4 px-6 text-gray-500 text-sm">{message.sentAt}</td>
+                                        <td className="py-4 px-6">
+                                            <button
+                                                onClick={() => handleDeleteMessage(message.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                                title="Xóa tin nhắn"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Main App Component
+    const App = () => {
+        const [activeTab, setActiveTab] = useState('dashboard');
+
+        const renderContent = () => {
+            switch (activeTab) {
+                case 'dashboard':
+                    return <Dashboard />;
+                case 'doctors':
+                    return <DoctorManagement />;
+                case 'patients':
+                    return <PatientManagement />;
+                case 'reports':
+                    return <SystemReports />;
+                case 'activities':
+                    return <UserActivities />;
+                case 'reviews':
+                case 'chat':
+                    return <ContentManagement />;
+                default:
+                    return <Dashboard />;
+            }
+        };
+
+        return (
+            <div className="min-h-screen bg-gray-50 flex">
                 <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
                 <div className="flex-1 flex flex-col">
-                    <Header user={user} />
+                    <Header />
 
-                    <main className="flex-1 overflow-y-auto p-6">
+                    <main className="flex-1 p-6 overflow-y-auto">
                         {renderContent()}
                     </main>
                 </div>
@@ -166,6 +988,7 @@
         );
     };
 
+    // Render the app
     ReactDOM.render(<App />, document.getElementById('root'));
 </script>
 </body>
