@@ -44,7 +44,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/uploads/**",
             "/ws/**",
             "/favicon.ico",
-            "/index.html"
+            "/index.html",
+
+
+            // Payment gateway callbacks - KHÔNG CẦN TOKEN
+            "/api/payments/vnpay/callback",
+            "/api/payments/vnpay/ipn",
+            "/api/payments/momo/callback",
+            "/api/payments/momo/return"
+
     );
 
     @Override

@@ -25,7 +25,7 @@ public class PaymentSecurityConfig {
                 "https://vnpayment.vn",
                 "https://test-payment.momo.vn",
                 "https://payment.momo.vn",
-                "http://localhost:3000", // Frontend dev
+                "http://localhost:8080", // Frontend dev
                 "https://yourdomain.com" // Production frontend
         ));
 

@@ -86,6 +86,9 @@ public class SecurityConfig {
                 .requestMatchers("/favicon.ico").permitAll()
                 .requestMatchers("/index.html").permitAll()
 
+                // Payment gateway callbacks - KHÔNG CẦN TOKEN
+                .requestMatchers("/api/payments/vnpay/callback").permitAll()
+
                 .requestMatchers("/favicon.ico").permitAll()
                 .requestMatchers("/api/drugs/**").hasAnyRole("DOCTOR", "PATIENT")
                 .requestMatchers("/api/drugs/analyze-**").hasRole("DOCTOR")

@@ -74,7 +74,7 @@ public class PaymentController {
         PaymentResponse response = paymentService.handleVnpayCallback(params);
 
         // Redirect về frontend với kết quả
-        String redirectUrl = "http://localhost:3000/payment-result?";
+        String redirectUrl = "http://localhost:8080/payment-result?";
         redirectUrl += "success=" + response.isSuccess();
         redirectUrl += "&paymentId=" + response.getPaymentId();
         redirectUrl += "&message=" + response.getMessage();
@@ -170,19 +170,42 @@ public class PaymentController {
     }
 
     /**
-     * Lấy IP address của client
+     * Lấy IP address của client và đảm bảo trả về IPv4
      */
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+            String ip = xForwardedFor.split(",")[0].trim();
+            return normalizeIpAddress(ip);
         }
 
         String xRealIp = request.getHeader("X-Real-IP");
         if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
+            return normalizeIpAddress(xRealIp);
         }
 
-        return request.getRemoteAddr();
+        String remoteAddr = request.getRemoteAddr();
+        return normalizeIpAddress(remoteAddr);
+    }
+
+    /**
+     * Chuyển IPv6 localhost thành IPv4
+     */
+    private String normalizeIpAddress(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return "127.0.0.1";
+        }
+
+        // Chuyển IPv6 localhost thành IPv4
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
+        }
+
+        // Nếu là IPv6 khác, có thể cần xử lý thêm
+        if (ip.contains(":") && !ip.contains(".")) {
+            return "127.0.0.1"; // Fallback to localhost
+        }
+
+        return ip;
     }
 }

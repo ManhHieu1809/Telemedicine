@@ -29,6 +29,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -149,6 +150,12 @@ public class PaymentService {
         try {
             log.info("Processing VNPay callback: {}", params);
 
+            // Debug: Log tất cả parameters từ VNPay
+            log.info("=== VNPay Callback Parameters ===");
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                log.info("Key: {} = Value: {}", entry.getKey(), entry.getValue());
+            }
+
             // Verify signature
             if (!VnpayUtil.verifySignature(params, paymentConfig.getVnpay().getSecretKey())) {
                 log.error("Invalid VNPay signature");
@@ -162,6 +169,16 @@ public class PaymentService {
             String responseCode = params.get("vnp_ResponseCode");
             String transactionNo = params.get("vnp_TransactionNo");
             String amount = params.get("vnp_Amount");
+            String bankCode = params.get("vnp_BankCode");
+            String payDate = params.get("vnp_PayDate");
+
+            log.info("VNPay callback details:");
+            log.info("Order ID: {}", orderId);
+            log.info("Response Code: {}", responseCode);
+            log.info("Transaction No: {}", transactionNo);
+            log.info("Amount: {}", amount);
+            log.info("Bank Code: {}", bankCode);
+            log.info("Pay Date: {}", payDate);
 
             // Tìm payment record
             Payment payment = paymentRepository.findById(Long.parseLong(orderId))
@@ -170,6 +187,16 @@ public class PaymentService {
             // Cập nhật trạng thái payment
             if ("00".equals(responseCode)) {
                 payment.setStatus(Payment.PaymentStatus.COMPLETED);
+
+                // LƯU TRANSACTION ID VÀO DATABASE
+                if (transactionNo != null && !transactionNo.isEmpty()) {
+                    payment.setTransactionId(transactionNo);
+                    log.info("Updated payment transaction ID: {}", transactionNo);
+                } else {
+                    log.warn("Transaction ID is null or empty from VNPay");
+                }
+
+                payment.setCreatedAt(LocalDateTime.now());
                 log.info("VNPay payment completed successfully: {}", orderId);
 
                 // Cập nhật appointment status nếu cần
@@ -180,15 +207,21 @@ public class PaymentService {
                 log.warn("VNPay payment failed with code: {}", responseCode);
             }
 
-            paymentRepository.save(payment);
+            // LƯU PAYMENT VÀO DATABASE
+            payment = paymentRepository.save(payment);
+            log.info("Payment saved with transaction ID: {}", payment.getTransactionId());
 
             return PaymentResponse.builder()
                     .success("00".equals(responseCode))
                     .paymentId(payment.getId())
-                    .transactionId(transactionNo)
+                    .transactionId(payment.getTransactionId()) // Lấy từ database sau khi save
                     .amount(payment.getAmount())
                     .status(payment.getStatus())
-                    .message("Payment processed")
+                    .appointmentId(payment.getAppointment().getId())
+                    .patientName(payment.getPatient().getFullName())
+                    .doctorName(payment.getDoctor().getFullName())
+                    .createdAt(payment.getCreatedAt())
+                    .message("Payment processed successfully")
                     .build();
 
         } catch (Exception e) {
@@ -307,43 +340,64 @@ public class PaymentService {
     private String buildVnpayUrl(Payment payment, PaymentRequest request) throws Exception {
         Map<String, String> vnpParams = new TreeMap<>();
 
-        vnpParams.put("vnp_Version", paymentConfig.getVnpay().getVersion());
-        vnpParams.put("vnp_Command", paymentConfig.getVnpay().getCommand());
+        // Sử dụng IP thật thay vì 127.0.0.1
+        String ipAddress = request.getIpAddress();
+        if (ipAddress == null || ipAddress.equals("127.0.0.1") || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("::1")) {
+            ipAddress = InetAddress.getLocalHost().getHostAddress(); // Lấy IP thật của máy
+        }
+
+        // Thông tin đơn hàng
+        String orderInfo = "PaymentForAppointment" + payment.getAppointment().getId();
+
+        // Thêm các tham số bắt buộc
+        vnpParams.put("vnp_Version", "2.1.0");
+        vnpParams.put("vnp_Command", "pay");
         vnpParams.put("vnp_TmnCode", paymentConfig.getVnpay().getTmnCode());
         vnpParams.put("vnp_Amount", String.valueOf(payment.getAmount().multiply(new BigDecimal(100)).longValue()));
         vnpParams.put("vnp_CurrCode", "VND");
         vnpParams.put("vnp_TxnRef", payment.getId().toString());
-        vnpParams.put("vnp_OrderInfo", "Thanh toan lich hen: " + payment.getAppointment().getId());
-        vnpParams.put("vnp_OrderType", paymentConfig.getVnpay().getOrderType());
+        vnpParams.put("vnp_OrderInfo", orderInfo);
+        vnpParams.put("vnp_OrderType", "other");
         vnpParams.put("vnp_Locale", "vn");
         vnpParams.put("vnp_ReturnUrl", paymentConfig.getVnpay().getReturnUrl());
-        vnpParams.put("vnp_IpAddr", request.getIpAddress() != null ? request.getIpAddress() : "127.0.0.1");
+        vnpParams.put("vnp_IpAddr", ipAddress);
         vnpParams.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        vnpParams.put("vnp_ExpireDate", LocalDateTime.now().plusMinutes(15).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
 
-        // Build hash data
+        // Build chuỗi dữ liệu ký và query string
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
 
-        for (Map.Entry<String, String> entry : vnpParams.entrySet()) {
-            hashData.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.toString()));
-            hashData.append('=');
-            hashData.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.toString()));
-            hashData.append('&');
+        for (Iterator<Map.Entry<String, String>> it = vnpParams.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, String> entry = it.next();
+            String key = entry.getKey();
+            String value = entry.getValue();
 
-            query.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.toString()));
-            query.append('=');
-            query.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.toString()));
-            query.append('&');
+            if (value != null && !value.isEmpty()) {
+                hashData.append(key).append('=').append(URLEncoder.encode(value, StandardCharsets.UTF_8.toString()));
+                query.append(URLEncoder.encode(key, StandardCharsets.UTF_8.toString()))
+                        .append('=')
+                        .append(URLEncoder.encode(value, StandardCharsets.UTF_8.toString()));
+                if (it.hasNext()) {
+                    hashData.append('&');
+                    query.append('&');
+                }
+            }
         }
 
-        hashData.setLength(hashData.length() - 1);
-        query.setLength(query.length() - 1);
-
+        // Tạo chữ ký
         String vnpSecureHash = VnpayUtil.hmacSHA512(paymentConfig.getVnpay().getSecretKey(), hashData.toString());
-        query.append("&vnp_SecureHash=").append(vnpSecureHash);
+        String queryUrl = query + "&vnp_SecureHash=" + vnpSecureHash;
+        String paymentUrl = paymentConfig.getVnpay().getPayUrl() + "?" + queryUrl;
 
-        return paymentConfig.getVnpay().getPayUrl() + "?" + query.toString();
+        log.info("=== VNPay URL ===");
+        log.info("Hash Data: {}", hashData.toString());
+        log.info("Generated Hash: {}", vnpSecureHash);
+        log.info("Payment URL: {}", paymentUrl);
+
+        return paymentUrl;
     }
+
 
     private String callMomoAPI(Payment payment, PaymentRequest request) throws Exception {
         Map<String, Object> momoParams = new HashMap<>();
@@ -627,6 +681,7 @@ public class PaymentService {
                 .appointmentId(payment.getAppointment().getId())
                 .amount(payment.getAmount())
                 .paymentMethod(payment.getPaymentMethod())
+                .transactionId(payment.getTransactionId())
                 .status(payment.getStatus())
                 .createdAt(payment.getCreatedAt())
                 .patientName(payment.getPatient().getFullName())
