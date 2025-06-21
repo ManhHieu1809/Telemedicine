@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/uploads/**",
             "/ws/**",
             "/favicon.ico",
-            "/index.html",
+            "/admin-login.html",
 
 
             // Payment gateway callbacks - KHÔNG CẦN TOKEN

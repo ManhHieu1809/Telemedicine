@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Telemedicine</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/admin/css/admin-styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="app" class="app">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-md"></i>
+                <span>Telemedicine Admin</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item active" data-tab="dashboard">
+                <a href="#dashboard">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="users">
+                <a href="#users">
+                    <i class="fas fa-users"></i>
+                    <span>Quản lý người dùng</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="doctors">
+                <a href="#doctors">
+                    <i class="fas fa-user-md"></i>
+                    <span>Quản lý bác sĩ</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="patients">
+                <a href="#patients">
+                    <i class="fas fa-user-injured"></i>
+                    <span>Quản lý bệnh nhân</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="payments">
+                <a href="#payments">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Quản lý thanh toán</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="reports">
+                <a href="#reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Báo cáo</span>
+                </a>
+            </li>
+            <li class="menu-item" data-tab="settings">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Cài đặt</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="adminName">Admin</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Đăng xuất</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="header-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <div class="user-dropdown">
+                        <button class="user-btn" id="userDropdownBtn">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="headerUserName">Admin</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdownMenu">
+                            <a href="#profile"><i class="fas fa-user"></i> Hồ sơ</a>
+                            <a href="#settings"><i class="fas fa-cog"></i> Cài đặt</a>
+                            <hr>
+                            <a href="#logout" id="headerLogout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+
+        <div class="content-area">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-content" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Tổng người dùng</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalDoctors">0</h3>
+                            <p>Bác sĩ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-injured"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPatients">0</h3>
+                            <p>Bệnh nhân</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRevenue">0đ</h3>
+                            <p>Doanh thu</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts">
+                    <div class="chart-container">
+                        <h3>Hoạt động người dùng gần đây</h3>
+                        <div id="userActivityChart" class="chart-placeholder">
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý người dùng</h2>
+                    <button class="btn btn-primary" id="addUserBtn">
+                        <i class="fas fa-plus"></i> Thêm người dùng
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-filters">
+                        <div class="filter-group">
+                            <label>Vai trò:</label>
+                            <select id="roleFilter">
+                                <option value="">Tất cả</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="DOCTOR">Bác sĩ</option>
+                                <option value="PATIENT">Bệnh nhân</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="userSearch" placeholder="Tìm theo tên, email...">
+                        </div>
+                    </div>
+
+                    <table class="data-table" id="usersTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Doctors Tab -->
+            <div id="doctors-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý bác sĩ</h2>
+                    <button class="btn btn-primary" id="addDoctorBtn">
+                        <i class="fas fa-plus"></i> Thêm bác sĩ
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-filters">
+                        <div class="filter-group">
+                            <label>Chuyên khoa:</label>
+                            <select id="specialtyFilter">
+                                <option value="">Tất cả</option>
+                                <option value="Nội khoa">Nội khoa</option>
+                                <option value="Ngoại khoa">Ngoại khoa</option>
+                                <option value="Sản phụ khoa">Sản phụ khoa</option>
+                                <option value="Nhi khoa">Nhi khoa</option>
+                                <option value="Tim mạch">Tim mạch</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="doctorSearch" placeholder="Tìm theo tên, chuyên khoa...">
+                        </div>
+                    </div>
+
+                    <table class="data-table" id="doctorsTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Chuyên khoa</th>
+                            <th>Kinh nghiệm</th>
+                            <th>Điện thoại</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="doctorsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Patients Tab -->
+            <div id="patients-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý bệnh nhân</h2>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-filters">
+                        <div class="filter-group">
+                            <label>Giới tính:</label>
+                            <select id="genderFilter">
+                                <option value="">Tất cả</option>
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                                <option value="OTHER">Khác</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="patientSearch" placeholder="Tìm theo tên, điện thoại...">
+                        </div>
+                    </div>
+
+                    <table class="data-table" id="patientsTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Ngày sinh</th>
+                            <th>Giới tính</th>
+                            <th>Điện thoại</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="patientsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div id="payments-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý thanh toán</h2>
+                    <button class="btn btn-secondary" id="exportPaymentsBtn">
+                        <i class="fas fa-download"></i> Xuất báo cáo
+                    </button>
+                </div>
+
+                <div class="payment-stats">
+                    <div class="stat-card">
+                        <h4>Doanh thu hôm nay</h4>
+                        <p class="amount" id="todayRevenue">0đ</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Doanh thu tháng này</h4>
+                        <p class="amount" id="monthRevenue">0đ</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Tổng giao dịch</h4>
+                        <p class="amount" id="totalTransactions">0</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-filters">
+                        <div class="filter-group">
+                            <label>Trạng thái:</label>
+                            <select id="paymentStatusFilter">
+                                <option value="">Tất cả</option>
+                                <option value="SUCCESS">Thành công</option>
+                                <option value="PENDING">Đang xử lý</option>
+                                <option value="FAILED">Thất bại</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Từ ngày:</label>
+                            <input type="date" id="paymentFromDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>Đến ngày:</label>
+                            <input type="date" id="paymentToDate">
+                        </div>
+                    </div>
+
+                    <table class="data-table" id="paymentsTable">
+                        <thead>
+                        <tr>
+                            <th>Mã GD</th>
+                            <th>Bệnh nhân</th>
+                            <th>Bác sĩ</th>
+                            <th>Số tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="paymentsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="paymentsPagination" class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: white; border-top: 1px solid #e5e7eb;"></div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Báo cáo hệ thống</h2>
+                    <button class="btn btn-primary" id="generateReportBtn">
+                        <i class="fas fa-chart-line"></i> Tạo báo cáo
+                    </button>
+                </div>
+
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>Báo cáo người dùng</h3>
+                        <p>Thống kê hoạt động người dùng theo thời gian</p>
+                        <button class="btn btn-outline">Xem chi tiết</button>
+                    </div>
+                    <div class="report-card">
+                        <h3>Báo cáo doanh thu</h3>
+                        <p>Phân tích doanh thu và xu hướng thanh toán</p>
+                        <button class="btn btn-outline">Xem chi tiết</button>
+                    </div>
+                    <div class="report-card">
+                        <h3>Báo cáo hệ thống</h3>
+                        <p>Tình trạng và hiệu suất hệ thống</p>
+                        <button class="btn btn-outline">Xem chi tiết</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Cài đặt hệ thống</h2>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt chung</h3>
+                    <div class="setting-item">
+                        <label>Tên hệ thống:</label>
+                        <input type="text" value="Telemedicine System" id="systemName">
+                    </div>
+                    <div class="setting-item">
+                        <label>Email hỗ trợ:</label>
+                        <input type="email" value="support@telemedicine.com" id="supportEmail">
+                    </div>
+                    <div class="setting-item">
+                        <label>Số điện thoại hỗ trợ:</label>
+                        <input type="tel" value="1900-1234" id="supportPhone">
+                    </div>
+                    <div class="setting-item">
+                        <label>Địa chỉ:</label>
+                        <textarea rows="3" id="supportAddress" placeholder="Nhập địa chỉ công ty...">123 Đường ABC, Phường XYZ, Quận 1, TP.HCM</textarea>
+                    </div>
+                    <button class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt bảo mật</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Yêu cầu xác thực 2 bước
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Ghi log hoạt động người dùng
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox"> Cho phép đăng nhập từ nhiều thiết bị
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Thời gian hết hạn phiên (phút):</label>
+                        <input type="number" value="60" min="15" max="480" id="sessionTimeout">
+                    </div>
+                    <div class="setting-item">
+                        <label>Số lần đăng nhập thất bại tối đa:</label>
+                        <input type="number" value="5" min="3" max="10" id="maxLoginAttempts">
+                    </div>
+                    <button class="btn btn-primary">Cập nhật bảo mật</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt email</h3>
+                    <div class="setting-item">
+                        <label>SMTP Server:</label>
+                        <input type="text" value="smtp.gmail.com" id="smtpServer">
+                    </div>
+                    <div class="setting-item">
+                        <label>SMTP Port:</label>
+                        <input type="number" value="587" id="smtpPort">
+                    </div>
+                    <div class="setting-item">
+                        <label>Email gửi:</label>
+                        <input type="email" value="noreply@telemedicine.com" id="fromEmail">
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Sử dụng SSL/TLS
+                        </label>
+                    </div>
+                    <button class="btn btn-primary">Lưu cài đặt email</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt thanh toán</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Kích hoạt thanh toán VNPay
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Kích hoạt thanh toán MoMo
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Phí dịch vụ mặc định (%):</label>
+                        <input type="number" value="5" min="0" max="20" step="0.1" id="serviceFee">
+                    </div>
+                    <div class="setting-item">
+                        <label>Số tiền tối thiểu (VNĐ):</label>
+                        <input type="number" value="50000" min="10000" step="1000" id="minAmount">
+                    </div>
+                    <button class="btn btn-primary">Lưu cài đặt thanh toán</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt thông báo</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Gửi email thông báo đặt lịch
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Gửi SMS nhắc nhở
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox"> Thông báo push notification
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Thời gian nhắc nhở trước (phút):</label>
+                        <input type="number" value="30" min="15" max="120" id="reminderTime">
+                    </div>
+                    <button class="btn btn-primary">Lưu cài đặt thông báo</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Backup & Restore</h3>
+                    <div class="setting-item">
+                        <label>Tự động backup hàng ngày:</label>
+                        <label>
+                            <input type="checkbox" checked> Kích hoạt
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Thời gian backup:</label>
+                        <input type="time" value="02:00" id="backupTime">
+                    </div>
+                    <div class="setting-item">
+                        <label>Lưu trữ backup (ngày):</label>
+                        <input type="number" value="30" min="7" max="365" id="backupRetention">
+                    </div>
+                    <div class="setting-item" style="display: flex; gap: 1rem; align-items: center;">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Tạo backup ngay
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-upload"></i> Restore từ file
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cài đặt nâng cao</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox"> Bật chế độ debug
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" checked> Ghi log API calls
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Múi giờ hệ thống:</label>
+                        <select id="timezone">
+                            <option value="Asia/Ho_Chi_Minh" selected>GMT+7 (Việt Nam)</option>
+                            <option value="Asia/Bangkok">GMT+7 (Thailand)</option>
+                            <option value="Asia/Singapore">GMT+8 (Singapore)</option>
+                            <option value="UTC">UTC (Coordinated Universal Time)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label>Ngôn ngữ mặc định:</label>
+                        <select id="defaultLanguage">
+                            <option value="vi" selected>Tiếng Việt</option>
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary">Lưu cài đặt nâng cao</button>
+                </div>
+
+                <div class="settings-section" style="border: 2px solid var(--error-color); border-radius: var(--border-radius);">
+                    <h3 style="color: var(--error-color);">
+                        <i class="fas fa-exclamation-triangle"></i> Vùng nguy hiểm
+                    </h3>
+                    <div class="setting-item">
+                        <p style="color: var(--gray-600); margin-bottom: 1rem;">
+                            Các thao tác bên dưới không thể hoàn tác. Vui lòng cẩn thận.
+                        </p>
+                        <button class="btn btn-danger" onclick="adminApp.resetSystem()">
+                            <i class="fas fa-redo"></i> Reset toàn bộ hệ thống
+                        </button>
+                        <button class="btn btn-danger" onclick="adminApp.clearAllData()" style="margin-left: 1rem;">
+                            <i class="fas fa-trash"></i> Xóa tất cả dữ liệu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="/admin/js/admin-app.js"></script>
+<script src="/admin/js/components/admin-components.js"></script>
+<script src="/admin/js/components/admin-config.js"></script>
+
+</body>
+</html>

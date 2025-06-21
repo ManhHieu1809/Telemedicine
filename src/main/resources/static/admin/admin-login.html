@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Telemedicine</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group i {
+            position: absolute;
+            right: 15px;
+            top: 38px;
+            color: #999;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn.loading {
+            color: transparent;
+        }
+
+        .login-btn .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .login-btn.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert.error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert.success {
+            background-color: #efe;
+            color: #363;
+            border: 1px solid #cfc;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .remember-me input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .remember-me label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-header">
+        <i class="fas fa-user-shield"></i>
+        <h1>Admin Panel</h1>
+        <p>Đăng nhập để quản lý hệ thống</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="username">Email</label>
+            <input type="email" id="username" name="username" placeholder="Nhập địa chỉ email" required>
+            <i class="fas fa-user"></i>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Mật khẩu</label>
+            <input type="password" id="password" name="password" required>
+            <i class="fas fa-lock"></i>
+        </div>
+
+        <div class="remember-me">
+            <input type="checkbox" id="rememberMe" name="rememberMe">
+            <label for="rememberMe">Ghi nhớ đăng nhập</label>
+        </div>
+
+        <button type="submit" class="login-btn">
+            <span>Đăng nhập</span>
+            <div class="spinner"></div>
+        </button>
+    </form>
+
+    <div class="footer-text">
+        © 2025 Telemedicine System. All rights reserved.
+    </div>
+</div>
+
+<script>
+    class AdminLogin {
+        constructor() {
+            this.apiBaseUrl = 'http://localhost:8080/api';
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.checkExistingToken();
+        }
+
+        bindEvents() {
+            document.getElementById('loginForm').addEventListener('submit', this.handleLogin.bind(this));
+        }
+
+        checkExistingToken() {
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                this.validateTokenAndRedirect(token);
+            }
+        }
+
+        async validateTokenAndRedirect(token) {
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/users/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.role === 'ADMIN') {
+                        window.location.href = 'admin-dashboard.html';
+                    }
+                }
+            } catch (error) {
+                console.error('Token validation error:', error);
+                localStorage.removeItem('adminToken');
+            }
+        }
+
+        async handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!email || !password) {
+                this.showAlert('Vui lòng nhập đầy đủ thông tin', 'error');
+                return;
+            }
+
+            this.setLoading(true);
+
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const userRole = data.role; // Bỏ .data vì role nằm trực tiếp trong data
+
+                    if (userRole !== 'ADMIN') {
+                        this.showAlert('Chỉ admin mới có thể truy cập trang này', 'error');
+                        this.setLoginLoading(false); // Sửa tên hàm
+                        return;
+                    }
+
+                    // Lưu token
+                    const storage = rememberMe ? localStorage : sessionStorage;
+                    storage.setItem('adminToken', data.token); // Bỏ .data
+                    storage.setItem('adminUser', JSON.stringify(data)); // Bỏ .data
+
+                    this.showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+
+                    setTimeout(() => {
+                        window.location.href = 'admin-dashboard.html';
+                    }, 1500);
+
+                } else {
+                    this.showAlert(data.message || 'Đăng nhập thất bại', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                this.showAlert('Lỗi kết nối máy chủ', 'error');
+            } finally {
+                this.setLoading(false);
+            }
+        }
+
+        setLoading(loading) {
+            const btn = document.querySelector('.login-btn');
+            const inputs = document.querySelectorAll('input');
+
+            if (loading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+                inputs.forEach(input => input.disabled = true);
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                inputs.forEach(input => input.disabled = false);
+            }
+        }
+
+        showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Khởi tạo ứng dụng
+    document.addEventListener('DOMContentLoaded', () => {
+        new AdminLogin();
+    });
+</script>
+</body>
+</html>

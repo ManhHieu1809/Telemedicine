@@ -41,7 +41,7 @@ public class PaymentAdminController {
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<PaymentResponse>>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status) {
         List<PaymentResponse> payments = paymentService.getAllPaymentsWithPagination(page, size, status);
         return ResponseEntity.ok(new ApiResponse<>(true, payments));
