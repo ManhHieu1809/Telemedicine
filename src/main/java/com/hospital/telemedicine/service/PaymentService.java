@@ -693,7 +693,7 @@ public class PaymentService {
     /**
      * Lấy tất cả thanh toán với phân trang
      */
-    public List<PaymentResponse> getAllPaymentsWithPagination(int page, int size, String status) {
+    public Page<PaymentResponse> getAllPaymentsWithPagination(int page, int size, String status) {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Payment> paymentsPage;
@@ -705,13 +705,12 @@ public class PaymentService {
                 paymentsPage = paymentRepository.findAll(pageable);
             }
 
-            return paymentsPage.getContent().stream()
-                    .map(this::mapToPaymentResponse)
-                    .collect(Collectors.toList());
+            // Trả về Page thay vì List
+            return paymentsPage.map(this::mapToPaymentResponse);
 
         } catch (Exception e) {
             log.error("Error getting payments with pagination: ", e);
-            return Collections.emptyList();
+            return Page.empty();
         }
     }
 

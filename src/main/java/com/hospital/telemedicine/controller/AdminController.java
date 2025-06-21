@@ -2,8 +2,7 @@ package com.hospital.telemedicine.controller;
 
 import com.hospital.telemedicine.dto.*;
 import com.hospital.telemedicine.dto.request.*;
-import com.hospital.telemedicine.dto.response.SystemReportResponse;
-import com.hospital.telemedicine.dto.response.UserActivityResponse;
+import com.hospital.telemedicine.dto.response.*;
 import com.hospital.telemedicine.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -93,5 +92,26 @@ public class AdminController {
                                                   @RequestBody UpdateMessageRequest request) {
         userService.updateMessage(messageId, request);
         return ResponseEntity.ok().build();
+    }
+
+    // Lấy tất cả người dùng
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
+        return ResponseEntity.ok(new ApiResponse<>(true, users));
+    }
+
+    // Lấy danh sách bệnh nhân
+    @GetMapping("/users/patients")
+    public ResponseEntity<ApiResponse<List<PatientResponse>>> getAllPatients() {
+        List<PatientResponse> patients = userService.getAllPatients();
+        return ResponseEntity.ok(new ApiResponse<>(true, patients));
+    }
+
+    // Lấy dashboard statistics
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getDashboardStats() {
+        DashboardStatsResponse stats = userService.getDashboardStats();
+        return ResponseEntity.ok(new ApiResponse<>(true, stats));
     }
 }

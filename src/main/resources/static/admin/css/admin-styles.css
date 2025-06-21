@@ -549,6 +549,31 @@ body {
     background: #dcfce7;
     color: #166534;
 }
+.status-primary,
+.status-doctor {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-patient {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-admin {
+    background: #fcf5dc;
+    color: #654c16;
+}
 
 .status-warning {
     background: #fef3c7;

@@ -470,4 +470,77 @@ public class UserService {
 
         return response;
     }
+
+    // Thêm vào UserService.java
+
+    public List<UserResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(this::convertToUserResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<PatientResponse> getAllPatients() {
+        List<Patient> patients = patientRepository.findAll();
+        return patients.stream()
+                .map(this::convertToPatientResponse)
+                .collect(Collectors.toList());
+    }
+
+    public DashboardStatsResponse getDashboardStats() {
+        long totalUsers = userRepository.count();
+        long totalDoctors = doctorRepository.count();
+        long totalPatients = patientRepository.count();
+        long totalAppointments = appointmentRepository.count();
+
+        return DashboardStatsResponse.builder()
+                .totalUsers(totalUsers)
+                .totalDoctors(totalDoctors)
+                .totalPatients(totalPatients)
+                .totalAppointments(totalAppointments)
+                .build();
+    }
+
+    private UserResponse convertToUserResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setUserId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setAvatarUrl(user.getAvatarUrl());
+        response.setRole(user.getRoles().name());
+
+        if (user.getRoles() == User.UserRole.PATIENT) {
+            Patient patient = patientRepository.findByUserId(user.getId()).orElse(null);
+            if (patient != null) {
+                response.setFullName(patient.getFullName());
+                response.setPhone(patient.getPhone());
+                response.setAddress(patient.getAddress());
+                response.setDateOfBirth(patient.getDateOfBirth());
+                response.setGender(patient.getGender() != null ? patient.getGender().name() : null);
+            }
+        } else if (user.getRoles() == User.UserRole.DOCTOR) {
+            Doctor doctor = doctorRepository.findByUserId(user.getId()).orElse(null);
+            if (doctor != null) {
+                response.setFullName(doctor.getFullName());
+                response.setPhone(doctor.getPhone());
+                response.setAddress(doctor.getAddress());
+                response.setSpecialty(doctor.getSpecialty());
+                response.setExperience(doctor.getExperience());
+            }
+        }
+
+        return response;
+    }
+
+
+    private PatientResponse convertToPatientResponse(Patient patient) {
+        return PatientResponse.builder()
+                .id(patient.getId())
+                .fullName(patient.getFullName())
+                .dateOfBirth(patient.getDateOfBirth())
+                .gender(patient.getGender() != null ? patient.getGender().name() : null)
+                .phone(patient.getPhone())
+                .address(patient.getAddress())
+                .build();
+    }
 }

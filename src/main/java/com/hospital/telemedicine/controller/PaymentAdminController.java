@@ -7,6 +7,7 @@ import com.hospital.telemedicine.dto.response.PaymentStatisticsResponse;
 import com.hospital.telemedicine.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,13 +40,25 @@ public class PaymentAdminController {
     /**
      * Lấy tất cả thanh toán với phân trang
      */
+    // Trong PaymentAdminController.java
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<PaymentResponse>>> getAllPayments(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String status) {
-        List<PaymentResponse> payments = paymentService.getAllPaymentsWithPagination(page, size, status);
-        return ResponseEntity.ok(new ApiResponse<>(true, payments));
+
+        Page<PaymentResponse> paymentsPage = paymentService.getAllPaymentsWithPagination(page, size, status);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", paymentsPage.getContent());
+        response.put("totalPages", paymentsPage.getTotalPages());
+        response.put("totalElements", paymentsPage.getTotalElements());
+        response.put("number", paymentsPage.getNumber());
+        response.put("size", paymentsPage.getSize());
+        response.put("first", paymentsPage.isFirst());
+        response.put("last", paymentsPage.isLast());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, response));
     }
 
     /**
