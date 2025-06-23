@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class UpdateUserRequest {
+    private String username;
     private String fullName;
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")

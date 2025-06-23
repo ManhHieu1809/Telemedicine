@@ -10,6 +10,7 @@ public class ConversationDTO {
     private List<Long> participantIds;
     private String lastMessage;
     private LocalDateTime lastActive;
+    private LocalDateTime lastMessageTime;
     private List<MessageDTO> messages;
     private int unreadCount;
     private boolean isGroup;
@@ -28,6 +29,7 @@ public class ConversationDTO {
         this.participantIds = participantIds;
         this.lastMessage = lastMessage;
         this.lastActive = lastActive;
+        this.lastMessageTime = lastActive;
         this.messages = messages;
         this.unreadCount = 0;
         this.isGroup = false;

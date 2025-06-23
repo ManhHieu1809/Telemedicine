@@ -33,29 +33,37 @@ public class UserController {
 
 
     @PutMapping("/avatar")
-    public ResponseEntity<String> updateAvatar(
+    public ResponseEntity<ApiResponse<String>> updateAvatar(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
         Long userId = extractUserId(userDetails);
         String avatarUrl = userService.updateAvatar(userId, file);
-        return ResponseEntity.ok(avatarUrl);
+        return ResponseEntity.ok(new ApiResponse<>(true, avatarUrl));
     }
 
-    @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<ApiResponse<DoctorResponse>> getDoctorById(@PathVariable Long doctorId) {
-        DoctorResponse doctor = userService.getDoctorById(doctorId);
-        return ResponseEntity.ok(new ApiResponse<>(true, doctor));
-    }
+   @GetMapping("/doctor/{doctorId}")
+   public ResponseEntity<ApiResponse<DoctorResponse>> getDoctorById(
+           @PathVariable Long doctorId,
+           @AuthenticationPrincipal UserDetails userDetails) {
+       Long patientId = userDetails instanceof UserDetailsImpl ? ((UserDetailsImpl) userDetails).getId() : null;
+       DoctorResponse doctor = userService.getDoctorById(doctorId, patientId);
+       return ResponseEntity.ok(new ApiResponse<>(true, doctor));
+   }
 
-    @GetMapping("/doctors/specialty")
-    public ResponseEntity<ApiResponse<List<DoctorResponse>>> getDoctorsBySpecialty(@RequestParam String specialty) {
-        List<DoctorResponse> doctors = userService.getDoctorsBySpecialty(specialty);
+    @GetMapping("/doctors")
+    public ResponseEntity<ApiResponse<List<DoctorResponse>>> getAllDoctors(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long patientId = userDetails instanceof UserDetailsImpl ? ((UserDetailsImpl) userDetails).getId() : null;
+        List<DoctorResponse> doctors = userService.getAllDoctors(patientId);
         return ResponseEntity.ok(new ApiResponse<>(true, doctors));
     }
 
-    @GetMapping("/doctors")
-    public ResponseEntity<ApiResponse<List<DoctorResponse>>> getAllDoctors() {
-        List<DoctorResponse> doctors = userService.getAllDoctors();
+    @GetMapping("/doctors/specialty")
+    public ResponseEntity<ApiResponse<List<DoctorResponse>>> getDoctorsBySpecialty(
+            @RequestParam String specialty,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long patientId = userDetails instanceof UserDetailsImpl ? ((UserDetailsImpl) userDetails).getId() : null;
+        List<DoctorResponse> doctors = userService.getDoctorsBySpecialty(specialty, patientId);
         return ResponseEntity.ok(new ApiResponse<>(true, doctors));
     }
 
@@ -74,8 +82,10 @@ public class UserController {
     }
 
     @GetMapping("/top-doctors")
-    public ResponseEntity<ApiResponse<List<TopDoctorResponse>>> getTopDoctors() {
-        List<TopDoctorResponse> doctors = userService.getTopDoctors();
+    public ResponseEntity<ApiResponse<List<TopDoctorResponse>>> getTopDoctors(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long patientId = userDetails instanceof UserDetailsImpl ? ((UserDetailsImpl) userDetails).getId() : null;
+        List<TopDoctorResponse> doctors = userService.getTopDoctors(patientId);
         return ResponseEntity.ok(new ApiResponse<>(true, doctors));
     }
 

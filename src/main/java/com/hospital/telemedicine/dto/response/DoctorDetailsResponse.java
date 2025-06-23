@@ -13,6 +13,7 @@ public class DoctorDetailsResponse {
     private Integer experience;
     private String phone;
     private String address;
+    private double averageRating;
     private int totalReviews;
     private List<ReviewInfo> reviews;
 
@@ -21,6 +22,7 @@ public class DoctorDetailsResponse {
         private Long reviewId;
         private Long patientId;
         private String patientName; // Tên bệnh nhân viết review
+        private String avatarUrl; // Ảnh đại diện của bệnh nhân
         private int rating;
         private String comment;
         private LocalDateTime createdAt;

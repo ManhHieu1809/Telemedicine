@@ -16,11 +16,15 @@ public class FavoriteDoctorResponse {
     private boolean success;
 
 
-    public FavoriteDoctorResponse(Long doctorId, Long doctorUserId, String doctorName, String specialty, LocalDateTime createdAt) {
+
+    public FavoriteDoctorResponse(Long doctorId, Long doctorUserId, String doctorName, String specialty, String avatarUrl, double averageRating, int totalReviews, LocalDateTime createdAt) {
         this.doctorId = doctorId;
         this.doctorUserId = doctorUserId;
         this.doctorName = doctorName;
         this.specialty = specialty;
+        this.avatarUrl = avatarUrl;
+        this.averageRating = averageRating;
+        this.totalReviews = totalReviews;
         this.createdAt = createdAt;
         this.success = true;
     }

@@ -13,4 +13,7 @@ public class DoctorResponse {
     private Integer experience;
     private String phone;
     private String address;
+    private double averageRating;
+    private int totalReviews;
+    private boolean isFavorite;
 }

@@ -6,6 +6,7 @@ import com.hospital.telemedicine.dto.response.*;
 import com.hospital.telemedicine.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -114,4 +115,5 @@ public class AdminController {
         DashboardStatsResponse stats = userService.getDashboardStats();
         return ResponseEntity.ok(new ApiResponse<>(true, stats));
     }
+
 }

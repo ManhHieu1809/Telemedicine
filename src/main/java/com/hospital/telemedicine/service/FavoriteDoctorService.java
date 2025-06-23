@@ -4,10 +4,13 @@ import com.hospital.telemedicine.dto.response.FavoriteDoctorResponse;
 import com.hospital.telemedicine.entity.Doctor;
 import com.hospital.telemedicine.entity.FavoriteDoctor;
 import com.hospital.telemedicine.entity.Patient;
+import com.hospital.telemedicine.entity.Reviews;
 import com.hospital.telemedicine.repository.DoctorRepository;
 import com.hospital.telemedicine.repository.FavoriteDoctorRepository;
 import com.hospital.telemedicine.repository.PatientRepository;
+import com.hospital.telemedicine.repository.ReviewRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +24,8 @@ public class FavoriteDoctorService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
     public FavoriteDoctorService(FavoriteDoctorRepository favoriteDoctorRepository,
                                  PatientRepository patientRepository,
                                  DoctorRepository doctorRepository) {
@@ -47,12 +52,28 @@ public class FavoriteDoctorService {
             favorite.setCreatedAt(LocalDateTime.now());
             favoriteDoctorRepository.save(favorite);
 
+
+            // Tính toán averageRating và totalReviews
+            List<Reviews> reviews = reviewRepository.findByDoctorId(doctor.getId());
+            double averageRating = reviews.stream()
+                    .mapToInt(Reviews::getRating)
+                    .average()
+                    .orElse(0.0);
+
+            // Lấy avatarUrl
+            String avatarUrl = (doctor.getUser() != null && doctor.getUser().getAvatarUrl() != null)
+                    ? doctor.getUser().getAvatarUrl()
+                    : "";
+
             // Trả về phản hồi thành công
             return new FavoriteDoctorResponse(
                     doctor.getId(),
                     doctor.getUser().getId(),
                     doctor.getFullName(),
                     doctor.getSpecialty(),
+                    avatarUrl,
+                    Math.round(averageRating * 10.0) / 10.0,
+                    reviews.size(),
                     favorite.getCreatedAt()
             ); // success = true trong constructor
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -73,12 +94,27 @@ public class FavoriteDoctorService {
                     .orElseThrow(() -> new IllegalStateException("Doctor is not in favorites"));
             favoriteDoctorRepository.delete(favorite);
 
+            // Tính toán averageRating và totalReviews
+            List<Reviews> reviews = reviewRepository.findByDoctorId(doctor.getId());
+            double averageRating = reviews.stream()
+                    .mapToInt(Reviews::getRating)
+                    .average()
+                    .orElse(0.0);
+
+            // Lấy avatarUrl
+            String avatarUrl = (doctor.getUser() != null && doctor.getUser().getAvatarUrl() != null)
+                    ? doctor.getUser().getAvatarUrl()
+                    : "";
+
             // Trả về phản hồi thành công
             return new FavoriteDoctorResponse(
                     doctor.getId(),
                     doctor.getUser().getId(),
                     doctor.getFullName(),
                     doctor.getSpecialty(),
+                    avatarUrl,
+                    Math.round(averageRating * 10.0) / 10.0,
+                    reviews.size(),
                     favorite.getCreatedAt()
             ); // success = true trong constructor
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -101,11 +137,20 @@ public class FavoriteDoctorService {
     }
 
     private FavoriteDoctorResponse mapToResponse(FavoriteDoctor favorite) {
+        List<Reviews> reviews = reviewRepository.findByDoctorId(favorite.getDoctor().getId());
+        double averageRating = reviews.stream()
+                .mapToInt(Reviews::getRating)
+                .average()
+                .orElse(0.0);
+
         return new FavoriteDoctorResponse(
                 favorite.getDoctor().getId(),
                 favorite.getDoctor().getUser().getId(),
                 favorite.getDoctor().getFullName(),
                 favorite.getDoctor().getSpecialty(),
+                favorite.getDoctor().getUser().getAvatarUrl(), // Thêm avatarUrl
+                Math.round(averageRating * 10.0) / 10.0, // Số sao trung bình
+                reviews.size(), // Tổng số đánh giá
                 favorite.getCreatedAt()
         ); // success = true trong constructor
     }
