@@ -73,25 +73,29 @@ public class UserService {
         return avatarUrl;
     }
 
-    public DoctorResponse getDoctorById(Long doctorId) {
+    public DoctorResponse getDoctorById(Long doctorId,Long patientId) {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bác sĩ"));
-        return mapToDoctorResponse(doctor);
+        return mapToDoctorResponse(doctor, patientId);
     }
 
-    public List<DoctorResponse> getDoctorsBySpecialty(String specialty) {
-        List<Doctor> doctors = doctorRepository.findBySpecialty(specialty);
-        return doctors.stream()
-                .map(this::mapToDoctorResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<DoctorResponse> getAllDoctors() {
+    // Lấy tất cả bác sĩ
+    public List<DoctorResponse> getAllDoctors(Long patientId) {
         List<Doctor> doctors = doctorRepository.findAll();
         return doctors.stream()
-                .map(this::mapToDoctorResponse)
+                .map(doctor -> mapToDoctorResponse(doctor, patientId))
                 .collect(Collectors.toList());
     }
+
+    // Lấy bác sĩ theo chuyên khoa
+    public List<DoctorResponse> getDoctorsBySpecialty(String specialty, Long patientId) {
+        List<Doctor> doctors = doctorRepository.findBySpecialty(specialty);
+        return doctors.stream()
+                .map(doctor -> mapToDoctorResponse(doctor, patientId))
+                .collect(Collectors.toList());
+    }
+
+
 
     public void updateUser(Long userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
@@ -123,7 +127,7 @@ public class UserService {
         }
     }
 
-    public List<TopDoctorResponse> getTopDoctors() {
+    public List<TopDoctorResponse> getTopDoctors(Long patientId) {
         List<Doctor> doctors = doctorRepository.findAll();
         return doctors.stream()
                 .map(doctor -> {
@@ -139,6 +143,19 @@ public class UserService {
                             .average()
                             .orElse(0.0);
                     response.setAverageRating(Math.round(averageRating * 10.0) / 10.0);
+
+                    // Kiểm tra isFavorite
+                    if (patientId != null) {
+                        Patient patient = patientRepository.findByUserId(patientId).orElse(null);
+                        if (patient != null) {
+                            response.setFavorite(favoriteDoctorRepository.findByPatientIdAndDoctorId(patient.getId(), doctor.getId()).isPresent());
+                        } else {
+                            response.setFavorite(false);
+                        }
+                    } else {
+                        response.setFavorite(false);
+                    }
+
                     return response;
                 })
                 .filter(response -> response.getTotalReviews() > 0)
@@ -438,7 +455,7 @@ public class UserService {
     }
 
 
-    private DoctorResponse mapToDoctorResponse(Doctor doctor) {
+    private DoctorResponse mapToDoctorResponse(Doctor doctor, Long patientId) {
         DoctorResponse response = new DoctorResponse();
         response.setId(doctor.getId());
         response.setUserId(doctor.getUser().getId());
@@ -449,6 +466,20 @@ public class UserService {
         response.setExperience(doctor.getExperience());
         response.setPhone(doctor.getPhone());
         response.setAddress(doctor.getAddress());
+
+        // Kiểm tra xem bác sĩ có trong danh sách yêu thích của bệnh nhân không
+        if (patientId != null) {
+            Patient patient = patientRepository.findByUserId(patientId)
+                    .orElse(null);
+            if (patient != null) {
+                response.setFavorite(favoriteDoctorRepository.findByPatientIdAndDoctorId(patient.getId(), doctor.getId()).isPresent());
+            } else {
+                response.setFavorite(false);
+            }
+        } else {
+            response.setFavorite(false);
+        }
+
         return response;
     }
 
@@ -543,4 +574,6 @@ public class UserService {
                 .address(patient.getAddress())
                 .build();
     }
+
+
 }

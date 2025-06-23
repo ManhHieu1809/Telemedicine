@@ -10,4 +10,5 @@ public class TopDoctorResponse {
     private String specialty;
     private double averageRating;
     private int totalReviews;
+    private boolean isFavorite;
 }
