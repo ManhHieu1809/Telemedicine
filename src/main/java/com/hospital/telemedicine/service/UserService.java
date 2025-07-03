@@ -1,28 +1,16 @@
 package com.hospital.telemedicine.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hospital.telemedicine.dto.request.*;
 import com.hospital.telemedicine.dto.response.*;
 import com.hospital.telemedicine.entity.*;
 import com.hospital.telemedicine.repository.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,65 +49,49 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Value("${imgbb.api.key}")
-    private String apiKey;
-
     @Transactional
     public String updateAvatar(Long userId, MultipartFile file) throws IOException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found for id: " + userId));
 
-        // Gửi file đến ImgBB
-        String imgBBUrl = uploadToImgBB(file, apiKey);
-        user.setAvatarUrl(imgBBUrl);
+        // Tạo thư mục uploads nếu chưa tồn tại
+        Path uploadPath = Paths.get(UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Lưu file với tên duy nhất
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(fileName);
+        Files.write(filePath, file.getBytes());
+
+        // Cập nhật avatar_url
+        String avatarUrl = "/uploads/avatars/" + fileName;
+        user.setAvatarUrl(avatarUrl);
         userRepository.save(user);
-        return imgBBUrl;
+
+        return avatarUrl;
     }
 
-    private String uploadToImgBB(MultipartFile file, String apiKey) throws IOException {
-        RestTemplate restTemplate = new RestTemplate();
-        String url = "https://api.imgbb.com/1/upload?key=" + apiKey;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", new ByteArrayResource(file.getBytes()) {
-            @Override
-            public String getFilename() {
-                return file.getOriginalFilename();
-            }
-        });
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
-        JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
-        return jsonNode.get("data").get("url").asText();
-    }
-
-    public DoctorResponse getDoctorById(Long doctorId,Long patientId) {
+    public DoctorResponse getDoctorById(Long doctorId) {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bác sĩ"));
-        return mapToDoctorResponse(doctor, patientId);
+        return mapToDoctorResponse(doctor);
     }
 
-    // Lấy tất cả bác sĩ
-    public List<DoctorResponse> getAllDoctors(Long patientId) {
-        List<Doctor> doctors = doctorRepository.findAll();
-        return doctors.stream()
-                .map(doctor -> mapToDoctorResponse(doctor, patientId))
-                .collect(Collectors.toList());
-    }
-
-    // Lấy bác sĩ theo chuyên khoa
-    public List<DoctorResponse> getDoctorsBySpecialty(String specialty, Long patientId) {
+    public List<DoctorResponse> getDoctorsBySpecialty(String specialty) {
         List<Doctor> doctors = doctorRepository.findBySpecialty(specialty);
         return doctors.stream()
-                .map(doctor -> mapToDoctorResponse(doctor, patientId))
+                .map(this::mapToDoctorResponse)
                 .collect(Collectors.toList());
     }
 
-
+    public List<DoctorResponse> getAllDoctors() {
+        List<Doctor> doctors = doctorRepository.findAll();
+        return doctors.stream()
+                .map(this::mapToDoctorResponse)
+                .collect(Collectors.toList());
+    }
 
     public void updateUser(Long userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
@@ -133,7 +105,6 @@ public class UserService {
         if (user.getRoles() == User.UserRole.PATIENT) {
             Patient patient = patientRepository.findByUserId(userId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bệnh nhân"));
-            if(request.getUsername() != null) user.setUsername(request.getUsername());
             if (request.getFullName() != null) patient.setFullName(request.getFullName());
             if (request.getPhone() != null) patient.setPhone(request.getPhone());
             if (request.getAddress() != null) patient.setAddress(request.getAddress());
@@ -152,13 +123,12 @@ public class UserService {
         }
     }
 
-    public List<TopDoctorResponse> getTopDoctors(Long patientId) {
+    public List<TopDoctorResponse> getTopDoctors() {
         List<Doctor> doctors = doctorRepository.findAll();
         return doctors.stream()
                 .map(doctor -> {
                     TopDoctorResponse response = new TopDoctorResponse();
                     response.setId(doctor.getId());
-                    response.setDoctorUserId(doctor.getUser().getId());
                     response.setFullName(doctor.getFullName());
                     response.setAvatarUrl(doctor.getUser().getAvatarUrl());
                     response.setSpecialty(doctor.getSpecialty());
@@ -169,19 +139,6 @@ public class UserService {
                             .average()
                             .orElse(0.0);
                     response.setAverageRating(Math.round(averageRating * 10.0) / 10.0);
-
-                    // Kiểm tra isFavorite
-                    if (patientId != null) {
-                        Patient patient = patientRepository.findByUserId(patientId).orElse(null);
-                        if (patient != null) {
-                            response.setFavorite(favoriteDoctorRepository.findByPatientIdAndDoctorId(patient.getId(), doctor.getId()).isPresent());
-                        } else {
-                            response.setFavorite(false);
-                        }
-                    } else {
-                        response.setFavorite(false);
-                    }
-
                     return response;
                 })
                 .filter(response -> response.getTotalReviews() > 0)
@@ -259,20 +216,12 @@ public class UserService {
         List<Reviews> reviews = reviewRepository.findByDoctorId(doctorId);
         response.setTotalReviews(reviews.size()); // Tổng số đánh giá
 
-        // Tính toán đánh giá trung bình
-        double averageRating = reviews.stream()
-                .mapToInt(Reviews::getRating)
-                .average()
-                .orElse(0.0);
-        response.setAverageRating(Math.round(averageRating * 10.0) / 10.0);
-
         List<DoctorDetailsResponse.ReviewInfo> reviewInfos = reviews.stream()
                 .map(review -> {
                     DoctorDetailsResponse.ReviewInfo reviewInfo = new DoctorDetailsResponse.ReviewInfo();
                     reviewInfo.setReviewId(review.getId());
                     reviewInfo.setPatientId(review.getPatient().getId());
                     reviewInfo.setPatientName(review.getPatient().getFullName());
-                    reviewInfo.setAvatarUrl(review.getPatient().getUser().getAvatarUrl());
                     reviewInfo.setRating(review.getRating());
                     reviewInfo.setComment(review.getComment());
                     reviewInfo.setCreatedAt(review.getCreatedAt());
@@ -489,7 +438,7 @@ public class UserService {
     }
 
 
-    private DoctorResponse mapToDoctorResponse(Doctor doctor, Long patientId) {
+    private DoctorResponse mapToDoctorResponse(Doctor doctor) {
         DoctorResponse response = new DoctorResponse();
         response.setId(doctor.getId());
         response.setUserId(doctor.getUser().getId());
@@ -500,30 +449,6 @@ public class UserService {
         response.setExperience(doctor.getExperience());
         response.setPhone(doctor.getPhone());
         response.setAddress(doctor.getAddress());
-
-        // Lấy và tính toán số sao trung bình từ các review
-        List<Reviews> reviews = reviewRepository.findByDoctorId(doctor.getId());
-        response.setTotalReviews(reviews.size());
-        double averageRating = reviews.stream()
-                .mapToInt(Reviews::getRating)
-                .average()
-                .orElse(0.0);
-        response.setAverageRating(Math.round(averageRating * 10.0) / 10.0);
-
-
-        // Kiểm tra xem bác sĩ có trong danh sách yêu thích của bệnh nhân không
-        if (patientId != null) {
-            Patient patient = patientRepository.findByUserId(patientId)
-                    .orElse(null);
-            if (patient != null) {
-                response.setFavorite(favoriteDoctorRepository.findByPatientIdAndDoctorId(patient.getId(), doctor.getId()).isPresent());
-            } else {
-                response.setFavorite(false);
-            }
-        } else {
-            response.setFavorite(false);
-        }
-
         return response;
     }
 
@@ -618,6 +543,4 @@ public class UserService {
                 .address(patient.getAddress())
                 .build();
     }
-
-
 }

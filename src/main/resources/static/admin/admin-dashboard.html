@@ -6,234 +6,7 @@
     <title>Admin Dashboard - Telemedicine</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/admin/css/admin-styles.css" rel="stylesheet">
-    <link href="/admin/css/dashboard-styles.css" rel="stylesheet">
-    <link href="/admin/css/styles.css" rel="stylesheet">
 </head>
-<style>
-    /* Enhanced Table Styling */
-    .table-wrapper {
-        overflow-x: auto;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .payments-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .payments-table th {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-        padding: 1rem 0.75rem;
-        text-align: left;
-        border: none;
-        font-size: 0.9rem;
-    }
-
-    .payments-table th i {
-        margin-right: 0.5rem;
-        opacity: 0.8;
-    }
-
-    .payments-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #e9ecef;
-        vertical-align: middle;
-        transition: background-color 0.2s ease;
-    }
-
-    .payments-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .payments-table tbody tr:nth-child(even) {
-        background-color: #fbfbfb;
-    }
-
-    /* Status Badges */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .status-success {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        color: white;
-    }
-
-    .status-warning {
-        background: linear-gradient(135deg, #ffc107, #fd7e14);
-        color: #212529;
-    }
-
-    .status-danger {
-        background: linear-gradient(135deg, #dc3545, #e83e8c);
-        color: white;
-    }
-
-    .status-secondary {
-        background: linear-gradient(135deg, #6c757d, #adb5bd);
-        color: white;
-    }
-
-    .status-info {
-        background: linear-gradient(135deg, #17a2b8, #6f42c1);
-        color: white;
-    }
-
-    /* Action Buttons */
-    .action-buttons {
-        display: flex;
-        gap: 0.25rem;
-    }
-
-    .action-btn {
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    /* Loading Spinner */
-    .loading-spinner {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 2rem;
-        color: #6c757d;
-    }
-
-    .loading-spinner i {
-        font-size: 1.2rem;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .table-filters {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group {
-            min-width: auto;
-        }
-
-        .payments-table {
-            font-size: 0.8rem;
-        }
-
-        .payments-table th,
-        .payments-table td {
-            padding: 0.5rem 0.25rem;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-    }
-
-    /* Print Styles */
-    @media print {
-        .table-filters,
-        .filter-summary,
-        .pagination-container,
-        .action-buttons {
-            display: none !important;
-        }
-
-        .payments-table {
-            border: 1px solid #000;
-        }
-
-        .payments-table th {
-            background: #f0f0f0 !important;
-            color: #000 !important;
-        }
-    }
-
-    /* Dark Mode Support */
-    @media (prefers-color-scheme: dark) {
-        .payments-table {
-            background: #2d3748;
-            color: #e2e8f0;
-        }
-
-        .payments-table td {
-            border-bottom-color: #4a5568;
-        }
-
-        .payments-table tbody tr:hover {
-            background-color: #374151;
-        }
-
-        .payments-table tbody tr:nth-child(even) {
-            background-color: #374151;
-        }
-    }
-
-    /* Animation cho row updates */
-    @keyframes rowUpdate {
-        0% {
-            background-color: #fff3cd;
-            transform: scale(1.02);
-        }
-        100% {
-            background-color: transparent;
-            transform: scale(1);
-        }
-    }
-
-    .row-updated {
-        animation: rowUpdate 1s ease-out;
-    }
-
-    /* Filter highlight khi đang active */
-    .filter-active {
-        border-color: #007bff !important;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
-    }
-
-    /* Empty state */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: #6c757d;
-    }
-
-    .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.3;
-    }
-
-    .empty-state h3 {
-        margin-bottom: 0.5rem;
-        color: #495057;
-    }
-
-    .empty-state p {
-        margin-bottom: 1.5rem;
-        font-size: 0.9rem;
-        line-height: 1.5;
-    }
-</style>
-
 <body>
 <div id="app" class="app">
     <!-- Sidebar -->
@@ -342,168 +115,69 @@
 
         <div class="content-area">
             <!-- Dashboard Tab -->
-<!--            <div id="dashboard-content" class="tab-content active">-->
+            <div id="dashboard-content" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Tổng người dùng</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalDoctors">0</h3>
+                            <p>Bác sĩ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-injured"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalPatients">0</h3>
+                            <p>Bệnh nhân</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRevenue">0đ</h3>
+                            <p>Doanh thu</p>
+                        </div>
+                    </div>
+                </div>
 
-<!--                &lt;!&ndash; Stats Cards Row &ndash;&gt;-->
-<!--                &lt;!&ndash; Stats Row &ndash;&gt;-->
-<!--                <div class="dashboard-stats-row">-->
-<!--                    <div class="stat-card users">-->
-<!--                        <div class="stat-header">-->
-<!--                            <div>-->
-<!--                                <div class="stat-value" id="totalUsers">0</div>-->
-<!--                                <div class="stat-label">Tổng người dùng</div>-->
-<!--                            </div>-->
-<!--                            <div class="stat-icon users">👥</div>-->
-<!--                        </div>-->
-<!--                        <div class="stat-trend trend-up">-->
-<!--                            ↗ +12.5% so với tháng trước-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    <div class="stat-card doctors">-->
-<!--                        <div class="stat-header">-->
-<!--                            <div>-->
-<!--                                <div class="stat-value" id="totalDoctors">0</div>-->
-<!--                                <div class="stat-label">Bác sĩ</div>-->
-<!--                            </div>-->
-<!--                            <div class="stat-icon doctors">👨‍⚕️</div>-->
-<!--                        </div>-->
-<!--                        <div class="stat-trend trend-up">-->
-<!--                            ↗ +5 bác sĩ mới tuần này-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    <div class="stat-card patients">-->
-<!--                        <div class="stat-header">-->
-<!--                            <div>-->
-<!--                                <div class="stat-value" id="totalPatients">0</div>-->
-<!--                                <div class="stat-label">Bệnh nhân</div>-->
-<!--                            </div>-->
-<!--                            <div class="stat-icon patients">🏥</div>-->
-<!--                        </div>-->
-<!--                        <div class="stat-trend trend-up">-->
-<!--                            ↗ +18.2% hoạt động tăng-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    <div class="stat-card revenue">-->
-<!--                        <div class="stat-header">-->
-<!--                            <div>-->
-<!--                                <div class="stat-value" id="totalRevenue">0đ</div>-->
-<!--                                <div class="stat-label">Doanh thu</div>-->
-<!--                            </div>-->
-<!--                            <div class="stat-icon revenue">💰</div>-->
-<!--                        </div>-->
-<!--                        <div class="stat-trend trend-up">-->
-<!--                            ↗ +22.3% so với tháng trước-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                &lt;!&ndash; Charts Section &ndash;&gt;-->
-<!--                <div class="dashboard-charts-section">-->
-<!--                    <div class="chart-card large">-->
-<!--                        <div class="chart-header">-->
-<!--                            <div>-->
-<!--                                <div class="chart-title">Doanh thu theo thời gian</div>-->
-<!--                                <div class="chart-subtitle">Thống kê 12 tháng gần nhất</div>-->
-<!--                            </div>-->
-<!--                            <div class="time-filter">-->
-<!--                                <button class="filter-btn">7 ngày</button>-->
-<!--                                <button class="filter-btn">30 ngày</button>-->
-<!--                                <button class="filter-btn active">12 tháng</button>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="chart-content">-->
-<!--                            <canvas id="revenueChart"></canvas>-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    <div class="chart-card small">-->
-<!--                        <div class="chart-header">-->
-<!--                            <div>-->
-<!--                                <div class="chart-title">Phân bố bệnh nhân</div>-->
-<!--                                <div class="chart-subtitle">Theo chuyên khoa</div>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="chart-content">-->
-<!--                            <canvas id="patientsChart"></canvas>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                &lt;!&ndash; Rankings Section &ndash;&gt;-->
-<!--                <div class="dashboard-rankings-section">-->
-<!--                    &lt;!&ndash; Top Doctors by Rating &ndash;&gt;-->
-<!--                    <div class="ranking-card">-->
-<!--                        <div class="ranking-header">-->
-<!--                            <div class="ranking-title">-->
-<!--                                ⭐ Top bác sĩ được yêu thích nhất-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="ranking-list">-->
-<!--                            &lt;!&ndash; Will be populated by JavaScript &ndash;&gt;-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    &lt;!&ndash; Top Doctors by Revenue &ndash;&gt;-->
-<!--                    <div class="ranking-card">-->
-<!--                        <div class="ranking-header">-->
-<!--                            <div class="ranking-title">-->
-<!--                                💰 Top bác sĩ doanh thu cao nhất-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="ranking-list">-->
-<!--                            &lt;!&ndash; Will be populated by JavaScript &ndash;&gt;-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    &lt;!&ndash; Top Patients &ndash;&gt;-->
-<!--                    <div class="ranking-card">-->
-<!--                        <div class="ranking-header">-->
-<!--                            <div class="ranking-title">-->
-<!--                                💳 Top bệnh nhân chi tiêu nhiều nhất-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="ranking-list">-->
-<!--                            &lt;!&ndash; Will be populated by JavaScript &ndash;&gt;-->
-<!--                        </div>-->
-<!--                    </div>-->
-
-<!--                    &lt;!&ndash; Top Specialties &ndash;&gt;-->
-<!--                    <div class="ranking-card">-->
-<!--                        <div class="ranking-header">-->
-<!--                            <div class="ranking-title">-->
-<!--                                🏥 Chuyên khoa hoạt động nhiều nhất-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        <div class="ranking-list">-->
-<!--                            &lt;!&ndash; Will be populated by JavaScript &ndash;&gt;-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                &lt;!&ndash; Activity Section &ndash;&gt;-->
-<!--                <div class="activity-section">-->
-<!--                    <div class="activity-card">-->
-<!--                        <div class="activity-header">-->
-<!--                            <div class="chart-title">Hoạt động gần đây</div>-->
-<!--                            <button class="filter-btn">Xem tất cả</button>-->
-<!--                        </div>-->
-<!--                        <div class="chart-content">-->
-<!--                            <canvas id="activityChart"></canvas>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
+                <div class="dashboard-charts">
+                    <div class="chart-container">
+                        <h3>Hoạt động người dùng gần đây</h3>
+                        <div id="userActivityChart" class="chart-placeholder">
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Users Tab -->
-            <!-- Enhanced Users Management Table -->
             <div id="users-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý người dùng</h2>
+                    <button class="btn btn-primary" id="addUserBtn">
+                        <i class="fas fa-plus"></i> Thêm người dùng
+                    </button>
+                </div>
+
                 <div class="table-container">
-                    <!-- Enhanced Filters -->
                     <div class="table-filters">
                         <div class="filter-group">
-                            <label for="roleFilter">Vai trò:</label>
+                            <label>Vai trò:</label>
                             <select id="roleFilter">
                                 <option value="">Tất cả</option>
                                 <option value="ADMIN">Admin</option>
@@ -511,190 +185,90 @@
                                 <option value="PATIENT">Bệnh nhân</option>
                             </select>
                         </div>
-
                         <div class="filter-group">
-                            <label for="userStatusFilter">Trạng thái:</label>
-                            <select id="userStatusFilter">
-                                <option value="">Tất cả</option>
-                                <option value="ACTIVE">Đang hoạt động</option>
-                                <option value="INACTIVE">Vô hiệu hóa</option>
-                                <option value="PENDING">Chờ xác thực</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="userSearch">Tìm kiếm:</label>
-                            <input type="text" id="userSearch" placeholder="Tên, email...">
-                        </div>
-
-                        <div class="filter-group">
-                            <button type="button" class="btn btn-primary" id="addUserBtn">
-                                Thêm người dùng
-                            </button>
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="userSearch" placeholder="Tìm theo tên, email...">
                         </div>
                     </div>
 
-                    <!-- Quick Filters cho Users -->
-                    <div class="quick-filters">
-                        <label>Lọc nhanh:</label>
-                        <button type="button" class="btn btn-outline btn-sm user-quick-filter" data-filter="doctors">
-                            Bác sĩ
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm user-quick-filter" data-filter="patients">
-                            Bệnh nhân
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm user-quick-filter" data-filter="active">
-                            Đang hoạt động
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm user-quick-filter" data-filter="pending">
-                            Chờ xác thực
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm user-quick-filter" data-filter="reset">
-                            Reset
-                        </button>
-                    </div>
-
-                    <!-- Filter Summary cho Users -->
-                    <div id="userFilterSummary"></div>
-
-                    <!-- Enhanced Users Table -->
-                    <div class="table-wrapper">
-                        <table class="data-table enhanced-table" id="usersTable">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tên đăng nhập</th>
-                                <th>Họ tên</th>
-                                <th>Email</th>
-                                <th>Vai trò</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
-                                <th>Thao tác</th>
-                            </tr>
-                            </thead>
-                            <tbody id="usersTableBody">
-                            <tr>
-                                <td colspan="8" class="loading">
-                                    <div class="loading-spinner">Đang tải dữ liệu...</div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="data-table" id="usersTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Enhanced Doctors Management Table -->
+            <!-- Doctors Tab -->
             <div id="doctors-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý bác sĩ</h2>
+                    <button class="btn btn-primary" id="addDoctorBtn">
+                        <i class="fas fa-plus"></i> Thêm bác sĩ
+                    </button>
+                </div>
+
                 <div class="table-container">
-                    <!-- Enhanced Filters -->
                     <div class="table-filters">
                         <div class="filter-group">
-                            <label for="specialtyFilter">Chuyên khoa:</label>
+                            <label>Chuyên khoa:</label>
                             <select id="specialtyFilter">
                                 <option value="">Tất cả</option>
-                                <option value="Tim mạch">Tim mạch</option>
-                                <option value="Thần Kinh">Thần kinh</option>
-                                <option value="Nhi khoa">Nhi khoa</option>
-                                <option value="Chỉnh Hình">Chấn thương chỉnh hình</option>
-                                <option value="Da liễu">Da liễu</option>
-                                <option value="Đa khoa">Đa khoa</option>
+                                <option value="Nội khoa">Nội khoa</option>
+                                <option value="Ngoại khoa">Ngoại khoa</option>
                                 <option value="Sản phụ khoa">Sản phụ khoa</option>
-                                <option value="Mắt">Mắt</option>
-                                <option value="Tai mũi họng">Tai mũi họng</option>
+                                <option value="Nhi khoa">Nhi khoa</option>
+                                <option value="Tim mạch">Tim mạch</option>
                             </select>
                         </div>
-
                         <div class="filter-group">
-                            <label for="doctorStatusFilter">Trạng thái:</label>
-                            <select id="doctorStatusFilter">
-                                <option value="">Tất cả</option>
-                                <option value="ACTIVE">Đang hoạt động</option>
-                                <option value="INACTIVE">Tạm nghỉ</option>
-                                <option value="PENDING">Chờ phê duyệt</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="experienceFilter">Kinh nghiệm:</label>
-                            <select id="experienceFilter">
-                                <option value="">Tất cả</option>
-                                <option value="0-2">0-2 năm</option>
-                                <option value="3-5">3-5 năm</option>
-                                <option value="6-10">6-10 năm</option>
-                                <option value="10+">Trên 10 năm</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="doctorSearch">Tìm kiếm:</label>
-                            <input type="text" id="doctorSearch" placeholder="Tên bác sĩ...">
-                        </div>
-
-                        <div class="filter-group">
-                            <button type="button" class="btn btn-primary" id="addDoctorBtn">
-                                Thêm bác sĩ
-                            </button>
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="doctorSearch" placeholder="Tìm theo tên, chuyên khoa...">
                         </div>
                     </div>
 
-                    <!-- Quick Filters cho Doctors -->
-                    <div class="quick-filters">
-                        <label>Lọc nhanh:</label>
-                        <button type="button" class="btn btn-outline btn-sm doctor-quick-filter" data-filter="cardiology">
-                            Tim mạch
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm doctor-quick-filter" data-filter="neurology">
-                            Thần kinh
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm doctor-quick-filter" data-filter="pediatrics">
-                            Nhi khoa
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm doctor-quick-filter" data-filter="active">
-                            Đang hoạt động
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm doctor-quick-filter" data-filter="reset">
-                            Reset
-                        </button>
-                    </div>
-
-                    <!-- Filter Summary cho Doctors -->
-                    <div id="doctorFilterSummary"></div>
-
-                    <!-- Enhanced Doctors Table -->
-                    <div class="table-wrapper">
-                        <table class="data-table enhanced-table" id="doctorsTable">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Họ tên</th>
-                                <th>Chuyên khoa</th>
-                                <th>Kinh nghiệm</th>
-                                <th>Số điện thoại</th>
-                                <th>Email</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                            </thead>
-                            <tbody id="doctorsTableBody">
-                            <tr>
-                                <td colspan="8" class="loading">
-                                    <div class="loading-spinner">Đang tải dữ liệu...</div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="data-table" id="doctorsTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Chuyên khoa</th>
+                            <th>Kinh nghiệm</th>
+                            <th>Điện thoại</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="doctorsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Enhanced Patients Management Table -->
+            <!-- Patients Tab -->
             <div id="patients-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý bệnh nhân</h2>
+                </div>
+
                 <div class="table-container">
-                    <!-- Enhanced Filters -->
                     <div class="table-filters">
                         <div class="filter-group">
-                            <label for="genderFilter">Giới tính:</label>
+                            <label>Giới tính:</label>
                             <select id="genderFilter">
                                 <option value="">Tất cả</option>
                                 <option value="MALE">Nam</option>
@@ -702,92 +276,41 @@
                                 <option value="OTHER">Khác</option>
                             </select>
                         </div>
-
                         <div class="filter-group">
-                            <label for="ageRangeFilter">Độ tuổi:</label>
-                            <select id="ageRangeFilter">
-                                <option value="">Tất cả</option>
-                                <option value="0-18">Trẻ em (0-18)</option>
-                                <option value="19-35">Thanh niên (19-35)</option>
-                                <option value="36-60">Trung niên (36-60)</option>
-                                <option value="60+">Cao tuổi (60+)</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="patientStatusFilter">Trạng thái:</label>
-                            <select id="patientStatusFilter">
-                                <option value="">Tất cả</option>
-                                <option value="ACTIVE">Đang điều trị</option>
-                                <option value="INACTIVE">Ngừng điều trị</option>
-                                <option value="NEW">Bệnh nhân mới</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="patientSearch">Tìm kiếm:</label>
-                            <input type="text" id="patientSearch" placeholder="Tên, số điện thoại...">
-                        </div>
-
-                        <div class="filter-group">
-                            <button type="button" class="btn btn-primary" id="addPatientBtn">
-                                Thêm bệnh nhân
-                            </button>
+                            <label>Tìm kiếm:</label>
+                            <input type="text" id="patientSearch" placeholder="Tìm theo tên, điện thoại...">
                         </div>
                     </div>
 
-                    <!-- Quick Filters cho Patients -->
-                    <div class="quick-filters">
-                        <label>Lọc nhanh:</label>
-                        <button type="button" class="btn btn-outline btn-sm patient-quick-filter" data-filter="new">
-                            Bệnh nhân mới
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm patient-quick-filter" data-filter="active">
-                            Đang điều trị
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm patient-quick-filter" data-filter="children">
-                            Trẻ em
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm patient-quick-filter" data-filter="elderly">
-                            Cao tuổi
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm patient-quick-filter" data-filter="reset">
-                            Reset
-                        </button>
-                    </div>
-
-                    <!-- Filter Summary cho Patients -->
-                    <div id="patientFilterSummary"></div>
-
-                    <!-- Enhanced Patients Table -->
-                    <div class="table-wrapper">
-                        <table class="data-table enhanced-table" id="patientsTable">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Họ tên</th>
-                                <th>Ngày sinh</th>
-                                <th>Giới tính</th>
-                                <th>Số điện thoại</th>
-                                <th>Địa chỉ</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                            </thead>
-                            <tbody id="patientsTableBody">
-                            <tr>
-                                <td colspan="8" class="loading">
-                                    <div class="loading-spinner">Đang tải dữ liệu...</div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="data-table" id="patientsTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Ngày sinh</th>
+                            <th>Giới tính</th>
+                            <th>Điện thoại</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="patientsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- Payments Tab -->
             <div id="payments-content" class="tab-content">
+                <div class="content-header">
+                    <h2>Quản lý thanh toán</h2>
+                    <button class="btn btn-secondary" id="exportPaymentsBtn">
+                        <i class="fas fa-download"></i> Xuất báo cáo
+                    </button>
+                </div>
+
                 <div class="payment-stats">
                     <div class="stat-card">
                         <h4>Doanh thu hôm nay</h4>
@@ -806,87 +329,45 @@
                 <div class="table-container">
                     <div class="table-filters">
                         <div class="filter-group">
-                            <label for="paymentStatusFilter">
-                                <i class="fas fa-tag"></i> Trạng thái:
-                            </label>
+                            <label>Trạng thái:</label>
                             <select id="paymentStatusFilter">
                                 <option value="">Tất cả</option>
-                                <option value="SUCCESS"> Thành công</option>
-                                <option value="PENDING"> Đang xử lý</option>
-                                <option value="FAILED"> Thất bại</option>
-                                <option value="CANCELLED"> Đã hủy</option>
-                                <option value="REFUNDED"> Đã hoàn tiền</option>
+                                <option value="SUCCESS">Thành công</option>
+                                <option value="PENDING">Đang xử lý</option>
+                                <option value="FAILED">Thất bại</option>
                             </select>
                         </div>
-
                         <div class="filter-group">
-                            <label for="paymentFromDate">
-                                <i class="fas fa-calendar-alt"></i> Từ ngày:
-                            </label>
-                            <input type="date" id="paymentFromDate" max="">
+                            <label>Từ ngày:</label>
+                            <input type="date" id="paymentFromDate">
                         </div>
-
                         <div class="filter-group">
-                            <label for="paymentToDate">
-                                <i class="fas fa-calendar-alt"></i> Đến ngày:
-                            </label>
-                            <input type="date" id="paymentToDate" max="">
-                        </div>
-
-                        <div class="filter-group">
-                            <button type="button" class="btn btn-outline" onclick="adminApp.openAdvancedFilter()" title="Bộ lọc nâng cao">
-                                <i class="fas fa-sliders-h"></i>
-                            </button>
+                            <label>Đến ngày:</label>
+                            <input type="date" id="paymentToDate">
                         </div>
                     </div>
 
-                    <!-- Filter Summary sẽ được thêm động -->
-                    <div id="filterSummary"></div>
-
-                    <!-- Enhanced Table -->
-                    <div class="table-wrapper">
-                        <table class="data-table payments-table" id="paymentsTable">
-                            <thead>
-                            <tr>
-                                <th>
-                                    <i class="fas fa-hashtag"></i> Mã GD
-                                </th>
-                                <th>
-                                    <i class="fas fa-user"></i> Bệnh nhân
-                                </th>
-                                <th>
-                                    <i class="fas fa-user-md"></i> Bác sĩ
-                                </th>
-                                <th>
-                                    <i class="fas fa-money-bill"></i> Số tiền
-                                </th>
-                                <th>
-                                    <i class="fas fa-info-circle"></i> Trạng thái
-                                </th>
-                                <th>
-                                    <i class="fas fa-clock"></i> Ngày
-                                </th>
-                                <th>
-                                    <i class="fas fa-cogs"></i> Thao tác
-                                </th>
-                            </tr>
-                            </thead>
-                            <tbody id="paymentsTableBody">
-                            <tr>
-                                <td colspan="7" class="loading">
-                                    <div class="loading-spinner">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        Đang tải dữ liệu...
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Enhanced Pagination -->
-                    <div id="paymentsPagination" class="pagination-container"></div>
+                    <table class="data-table" id="paymentsTable">
+                        <thead>
+                        <tr>
+                            <th>Mã GD</th>
+                            <th>Bệnh nhân</th>
+                            <th>Bác sĩ</th>
+                            <th>Số tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody id="paymentsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Đang tải dữ liệu...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
+                <div id="paymentsPagination" class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: white; border-top: 1px solid #e5e7eb;"></div>
+            </div>
 
             <!-- Reports Tab -->
             <div id="reports-content" class="tab-content">
@@ -1116,36 +597,11 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
     </main>
 </div>
 <script src="/admin/js/admin-app.js"></script>
 <script src="/admin/js/components/admin-components.js"></script>
 <script src="/admin/js/components/admin-config.js"></script>
-<!-- <script src="/admin/js/components/enhanced-dashboard.js"></script> --> 
-<script>
-    // Set max date cho date inputs (không cho chọn ngày tương lai)
-    document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date().toISOString().split('T')[0];
-        const fromDateInput = document.getElementById('paymentFromDate');
-        const toDateInput = document.getElementById('paymentToDate');
 
-        if (fromDateInput) fromDateInput.setAttribute('max', today);
-        if (toDateInput) toDateInput.setAttribute('max', today);
-
-        // Set default 30 days range
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        if (fromDateInput && !fromDateInput.value) {
-            fromDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
-        }
-
-        if (toDateInput && !toDateInput.value) {
-            toDateInput.value = today;
-        }
-    });
-</script>
 </body>
 </html>
