@@ -25,4 +25,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Kiểm tra xem bác sĩ có cuộc hẹn tại thời điểm cụ thể không (từ yêu cầu trước)
     @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE a.doctor.id = :doctorId AND a.date = :date AND a.time = :time")
     boolean existsByDoctorIdAndDateAndTime(Long doctorId, LocalDate date, LocalTime time);
+
+    @Query("SELECT a FROM Appointment a WHERE a.doctor.id = :doctorId AND a.date = :date " +
+            "AND a.time BETWEEN :startTime AND :endTime AND a.status != 'CANCELLED'")
+    List<Appointment> findActiveAppointmentsByDoctorIdAndDateTimeBetween(Long doctorId, LocalDate date, LocalTime startTime, LocalTime endTime);
+
+    @Query("SELECT a FROM Appointment a WHERE a.doctor.id = :doctorId AND a.date = :date AND a.status != 'CANCELLED'")
+    List<Appointment> findActiveAppointmentsByDoctorIdAndDate(Long doctorId, LocalDate date);
 }

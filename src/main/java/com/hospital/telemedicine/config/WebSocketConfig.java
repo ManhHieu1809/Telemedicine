@@ -34,12 +34,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue");
         config.setApplicationDestinationPrefixes("/app");
+        config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns(" https://86b8-42-114-121-96.ngrok-free.app")
                 .withSockJS();
     }
 
@@ -51,25 +52,49 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // Lấy token từ header
+                    // Lấy JWT token từ header
                     String token = accessor.getFirstNativeHeader("Authorization");
 
-                    if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
-                        token = token.substring(7);
+                    if (StringUtils.hasText(token)) {
                         try {
+                            // Loại bỏ "Bearer " prefix
+                            if (token.startsWith("Bearer ")) {
+                                token = token.substring(7);
+                            }
+
+                            // Validate token
                             if (jwtTokenProvider.validateToken(token)) {
                                 String username = jwtTokenProvider.getUsernameFromToken(token);
                                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
                                 UsernamePasswordAuthenticationToken authentication =
                                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                                accessor.setUser(authentication);
+
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                                accessor.setUser(authentication);
+
+                                // Lưu userId vào session attributes để sử dụng sau
+                                if (userDetails instanceof com.hospital.telemedicine.security.UserDetailsImpl) {
+                                    Long userId = ((com.hospital.telemedicine.security.UserDetailsImpl) userDetails).getId();
+                                    accessor.getSessionAttributes().put("userId", userId);
+                                    accessor.getSessionAttributes().put("username", username);
+                                }
+
+                                System.out.println("WebSocket authenticated user: " + username);
+                            } else {
+                                System.err.println("Invalid JWT token in WebSocket connection");
+                                throw new SecurityException("Invalid JWT token");
                             }
                         } catch (Exception e) {
-                            System.err.println("JWT validation failed: " + e.getMessage());
+                            System.err.println("Error authenticating WebSocket: " + e.getMessage());
+                            throw new SecurityException("Authentication failed");
                         }
+                    } else {
+                        System.err.println("No JWT token found in WebSocket connection");
+                        throw new SecurityException("No JWT token found");
                     }
                 }
+
                 return message;
             }
         });

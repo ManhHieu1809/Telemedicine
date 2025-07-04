@@ -6,7 +6,11 @@ import com.hospital.telemedicine.dto.response.ChatMessageResponse;
 import com.hospital.telemedicine.dto.UserStatusDTO;
 import com.hospital.telemedicine.dto.response.MessageReadResponse;
 import com.hospital.telemedicine.entity.Message;
+import com.hospital.telemedicine.entity.User;
+import com.hospital.telemedicine.repository.UserRepository;
 import com.hospital.telemedicine.service.ChatService;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,7 +27,8 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-
+    @Autowired
+    private UserRepository userRepository;
     public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate) {
         this.chatService = chatService;
         this.messagingTemplate = messagingTemplate;
@@ -32,16 +37,26 @@ public class ChatController {
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessageRequest messageRequest) {
         ChatMessageResponse response = chatService.saveMessage(messageRequest);
-        messagingTemplate.convertAndSendToUser(
-                messageRequest.getReceiverId().toString(),
-                "/queue/messages",
-                response
-        );
-        messagingTemplate.convertAndSendToUser(
-                messageRequest.getSenderId().toString(),
-                "/queue/messages",
-                response
-        );
+
+        // Lấy email của receiver và sender từ database
+        User receiver = userRepository.findById(messageRequest.getReceiverId()).orElse(null);
+        User sender = userRepository.findById(messageRequest.getSenderId()).orElse(null);
+
+        if (receiver != null) {
+            messagingTemplate.convertAndSendToUser(
+                    receiver.getEmail(),
+                    "/queue/messages",
+                    response
+            );
+        }
+
+        if (sender != null) {
+            messagingTemplate.convertAndSendToUser(
+                    sender.getEmail(),
+                    "/queue/messages",
+                    response
+            );
+        }
     }
 
     @MessageMapping("/chat.status")

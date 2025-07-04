@@ -71,7 +71,7 @@ public class AppointmentService {
             LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
             LocalDateTime startWindow = appointmentDateTime.minusMinutes(30);
             LocalDateTime endWindow = appointmentDateTime.plusMinutes(30);
-            List<Appointment> conflictingAppointments = appointmentRepository.findByDoctorIdAndDateTimeBetween(
+            List<Appointment> conflictingAppointments = appointmentRepository.findActiveAppointmentsByDoctorIdAndDateTimeBetween(
                     request.getDoctorId(), date, startWindow.toLocalTime(), endWindow.toLocalTime());
             if (!conflictingAppointments.isEmpty()) {
                 throw new IllegalArgumentException("Bác sĩ đã có lịch hẹn vào thời gian này");
@@ -144,7 +144,7 @@ public class AppointmentService {
         }
 
         // Lấy danh sách cuộc hẹn đã có của bác sĩ trong ngày
-        List<Appointment> appointments = appointmentRepository.findByDoctorIdAndDate(doctorId, date);
+        List<Appointment> appointments = appointmentRepository.findActiveAppointmentsByDoctorIdAndDate(doctorId, date);
         List<LocalTime> bookedSlots = appointments.stream()
                 .map(Appointment::getTime)
                 .collect(Collectors.toList());
@@ -195,7 +195,7 @@ public class AppointmentService {
             LocalDateTime newDateTime = LocalDateTime.of(date, time);
             LocalDateTime startWindow = newDateTime.minusMinutes(30);
             LocalDateTime endWindow = newDateTime.plusMinutes(30);
-            List<Appointment> conflictingAppointments = appointmentRepository.findByDoctorIdAndDateTimeBetween(
+            List<Appointment> conflictingAppointments = appointmentRepository.findActiveAppointmentsByDoctorIdAndDateTimeBetween(
                     appointment.getDoctor().getId(), date, startWindow.toLocalTime(), endWindow.toLocalTime());
             conflictingAppointments.removeIf(a -> a.getId().equals(appointmentId));
             if (!conflictingAppointments.isEmpty()) {

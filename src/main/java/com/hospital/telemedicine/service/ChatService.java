@@ -65,7 +65,7 @@ public class ChatService {
         message = messageRepository.save(message);
 
         // Cập nhật conversation_id trong DB trực tiếp
-        jdbcTemplate.update("UPDATE chat_messages SET conversation = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE chat_messages SET conversation_id = ? WHERE id = ?",
                 conversation.getId(), message.getId());
 
         return mapToMessageResponse(message);
@@ -122,23 +122,23 @@ public class ChatService {
                     if (latestMessage.isPresent()) {
                         dto.setLastMessageTime(latestMessage.get().getSentAt());
                     } else {
-                        
+
                         dto.setLastMessageTime(conv.getLastActive());
                     }
 
-                    // Tìm người chat khác (không phải current user)
+
                     User otherUser = conv.getParticipants().stream()
                             .filter(participant -> !participant.getId().equals(userId))
                             .findFirst()
                             .orElse(null);
 
-                    // Set thông tin người chat khác
+
                     if (otherUser != null) {
                         dto.setOtherUserId(otherUser.getId());
                         dto.setOtherUserName(otherUser.getUsername());
                         dto.setOtherUserAvatar(otherUser.getAvatarUrl());
 
-                        // **LOGIC THỰC TẾ CHO STATUS**
+
                         UserStatus userStatus = userStatusRepository.findById(otherUser.getId()).orElse(null);
                         if (userStatus != null) {
                             if (userStatus.isOnline()) {
@@ -157,7 +157,6 @@ public class ChatService {
 
                     return dto;
                 })
-                // **THÊM SORT THEO THỜI GIAN TIN NHẮN MỚI NHẤT**
                 .sorted((a, b) -> b.getLastMessageTime().compareTo(a.getLastMessageTime()))
                 .collect(Collectors.toList());
     }
