@@ -13,6 +13,7 @@ public class DoctorDetailsResponse {
     private Integer experience;
     private String phone;
     private String address;
+    private String avatarUrl;
     private double averageRating;
     private int totalReviews;
     private List<ReviewInfo> reviews;

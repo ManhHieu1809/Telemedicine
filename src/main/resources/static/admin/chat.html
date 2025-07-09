@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Real-time Test</title>
+    <title>Chat Real-time</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
@@ -14,41 +14,48 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
         .container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            width: 100%;
-            max-width: 1200px;
-            height: 80vh;
             display: flex;
+            height: 100vh;
+            background: white;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
+        /* Login Interface */
         .login-container {
-            max-width: 400px;
-            height: auto;
-            display: block;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .login-form {
+        .login-box {
+            background: white;
             padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            width: 400px;
             text-align: center;
         }
 
-        .login-form h2 {
-            color: #333;
+        .login-box h2 {
             margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
+            color: #333;
+            font-size: 24px;
         }
 
         .form-group {
@@ -58,18 +65,18 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             color: #555;
             font-weight: 500;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 12px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
+            font-size: 16px;
+            transition: border-color 0.3s;
         }
 
         .form-group input:focus {
@@ -77,7 +84,7 @@
             border-color: #667eea;
         }
 
-        .btn {
+        .login-btn {
             width: 100%;
             padding: 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -85,168 +92,166 @@
             border: none;
             border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s;
         }
 
-        .btn:hover {
+        .login-btn:hover {
             transform: translateY(-2px);
         }
 
-        .btn:disabled {
-            opacity: 0.6;
+        .login-btn:disabled {
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
 
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
         }
 
         .success-message {
-            background: #d1fae5;
-            color: #059669;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         /* Chat Interface */
+        .chat-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
         .chat-sidebar {
-            width: 300px;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
+            width: 350px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
             display: flex;
             flex-direction: column;
         }
 
         .chat-header {
             padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
+            background: #667eea;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
         }
 
         .user-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-
-        .user-details h3 {
-            font-size: 16px;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-
-        .user-status {
-            font-size: 12px;
-            color: #10b981;
-            font-weight: 500;
+            margin-right: 10px;
+            font-weight: bold;
         }
 
         .connection-status {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-top: 16px;
-            padding: 8px 12px;
-            background: #f1f5f9;
-            border-radius: 6px;
             font-size: 12px;
+            margin-top: 5px;
         }
 
-        .status-dot {
+        .status-indicator {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #ef4444;
+            margin-right: 5px;
+            background: #dc3545;
         }
 
-        .status-dot.connected {
-            background: #10b981;
+        .status-indicator.connected {
+            background: #28a745;
         }
 
-        .chat-rooms {
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .conversations-container {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
+            padding: 10px;
         }
 
         .conversation-item {
-            padding: 12px;
-            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 5px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-bottom: 8px;
-            transition: background-color 0.2s ease;
+            transition: background 0.2s;
             border: 1px solid transparent;
         }
 
         .conversation-item:hover {
-            background: #e2e8f0;
+            background: #e9ecef;
         }
 
         .conversation-item.active {
             background: #667eea;
             color: white;
-            border-color: #5a67d8;
-        }
-
-        .conversation-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
         }
 
         .conversation-name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .conversation-time {
-            font-size: 11px;
-            opacity: 0.7;
+            font-weight: 500;
+            margin-bottom: 5px;
         }
 
         .conversation-preview {
-            font-size: 12px;
-            opacity: 0.8;
+            font-size: 14px;
+            color: #6c757d;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .conversation-unread {
-            background: #ef4444;
-            color: white;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: 600;
-            min-width: 16px;
-            text-align: center;
+        .conversation-item.active .conversation-preview {
+            color: rgba(255, 255, 255, 0.8);
         }
 
-        .conversation-item.active .conversation-unread {
-            background: rgba(255,255,255,0.3);
+        .unread-count {
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-left: auto;
         }
 
         .chat-main {
@@ -257,58 +262,40 @@
 
         .chat-main-header {
             padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
             background: white;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .chat-main-header h2 {
+            color: #333;
             font-size: 18px;
-            color: #1e293b;
         }
 
         .messages-container {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
-            background: #f8fafc;
+            padding: 20px;
+            background: #f8f9fa;
         }
 
         .message {
-            margin-bottom: 16px;
+            margin-bottom: 15px;
             display: flex;
-            gap: 12px;
+            align-items: flex-start;
         }
 
         .message.own {
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #94a3b8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .message.own .message-avatar {
-            background: #667eea;
-        }
-
-        .message-content {
-            max-width: 70%;
+            justify-content: flex-end;
         }
 
         .message-bubble {
-            background: white;
+            max-width: 70%;
             padding: 12px 16px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .message.own .message-bubble {
@@ -316,41 +303,48 @@
             color: white;
         }
 
-        .message-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-            font-size: 12px;
-            color: #64748b;
+        .message-content {
+            margin-bottom: 5px;
+            word-wrap: break-word;
         }
 
-        .message.own .message-info {
-            justify-content: flex-end;
+        .message-meta {
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message.own .message-meta {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .message-status {
+            font-size: 11px;
+            margin-left: 5px;
         }
 
         .message-input-container {
             padding: 20px;
             background: white;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #e9ecef;
         }
 
         .message-input-form {
             display: flex;
-            gap: 12px;
-            align-items: flex-end;
+            gap: 10px;
         }
 
         .message-input {
             flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
             resize: none;
-            min-height: 44px;
             max-height: 120px;
-            font-family: inherit;
-            font-size: 14px;
+            transition: border-color 0.3s;
         }
 
         .message-input:focus {
@@ -359,72 +353,108 @@
         }
 
         .send-btn {
+            padding: 12px 20px;
             background: #667eea;
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 12px 20px;
+            border-radius: 25px;
             cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.2s ease;
+            font-weight: 500;
+            transition: background 0.2s;
         }
 
-        .send-btn:hover:not(:disabled) {
+        .send-btn:hover {
             background: #5a67d8;
         }
 
         .send-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.7;
             cursor: not-allowed;
         }
 
-        .logout-btn {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 16px;
+        .loading-conversations {
+            text-align: center;
+            color: #6c757d;
+            padding: 20px;
         }
 
-        .logout-btn:hover {
-            background: #dc2626;
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background: #e9ecef;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-style: italic;
+            color: #6c757d;
         }
 
-        .hidden {
-            display: none !important;
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+            margin-left: 10px;
         }
 
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #6c757d;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
-                height: 100vh;
+                margin: 0;
                 border-radius: 0;
+                height: 100vh;
             }
 
             .chat-sidebar {
-                display: none;
+                width: 300px;
+            }
+
+            .login-box {
+                width: 90%;
+                margin: 20px;
             }
         }
     </style>
 </head>
 <body>
-<!-- Login Form -->
-<div id="loginContainer" class="container login-container">
-    <div class="login-form">
+<!-- Login Interface -->
+<div id="loginContainer" class="login-container">
+    <div class="login-box">
         <h2>Đăng nhập Chat</h2>
-        <div id="loginMessage"></div>
         <form id="loginForm">
             <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required placeholder="Nhập email của bạn">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" name="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Mật khẩu:</label>
-                <input type="password" id="password" name="password" required placeholder="Nhập mật khẩu">
+                <label for="loginPassword">Mật khẩu:</label>
+                <input type="password" id="loginPassword" name="password" required>
             </div>
-            <button type="submit" class="btn" id="loginBtn">Đăng nhập</button>
+            <button type="submit" class="login-btn" id="loginBtn">Đăng nhập</button>
+            <div id="loginMessage" class="message" style="display: none;"></div>
         </form>
     </div>
 </div>
@@ -435,22 +465,20 @@
         <div class="chat-header">
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-details">
-                    <h3 id="userName">User</h3>
-                    <div class="user-status">Online</div>
+                <div>
+                    <div id="userName">User</div>
+                    <div class="connection-status">
+                        <div class="status-indicator" id="connectionStatus"></div>
+                        <span id="connectionText">Đang kết nối...</span>
+                    </div>
                 </div>
-            </div>
-            <div class="connection-status">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="connectionStatus">Đang kết nối...</span>
             </div>
             <button class="logout-btn" onclick="logout()">Đăng xuất</button>
         </div>
-        <div class="chat-rooms">
-            <h4 style="margin-bottom: 16px; color: #64748b; font-size: 14px;">Cuộc hội thoại</h4>
+        <div class="conversations-container">
             <div id="conversationsList">
-                <div class="loading-conversations" style="text-align: center; color: #64748b; padding: 20px;">
-                    Đang tải...
+                <div class="loading-conversations">
+                    Đang tải cuộc hội thoại...
                 </div>
             </div>
         </div>
@@ -487,11 +515,14 @@
     let stompClient = null;
     let currentConversation = null;
     let conversations = [];
+    let reconnectAttempts = 0;
+    let maxReconnectAttempts = 5;
+    let reconnectInterval = null;
+    let typingTimeout = null;
+    let typingUsers = new Set();
 
-    // Global variables for subscriptions
-    let mainSubscription = null;
-    let altSubscription = null;
-    let topicSubscription = null;
+    // WebSocket subscriptions
+    let subscriptions = [];
 
     // Initialize app
     document.addEventListener('DOMContentLoaded', function() {
@@ -503,16 +534,23 @@
         const token = localStorage.getItem('jwt_token');
         const userData = localStorage.getItem('user_data');
 
+        console.log('🚀 Initializing app...');
+        console.log('🔍 JWT token exists:', !!token);
+        console.log('🔍 User data exists:', !!userData);
+
         if (token && userData) {
             try {
                 currentUser = JSON.parse(userData);
+                console.log('✅ User loaded from localStorage:', currentUser.username || currentUser.email);
+
+                // Show chat interface (which will also connect WebSocket)
                 showChatInterface();
-                connectWebSocket();
             } catch (error) {
-                console.error('Error parsing user data:', error);
+                console.error('❌ Error parsing user data:', error);
                 showLoginInterface();
             }
         } else {
+            console.log('🔐 No valid session found, showing login');
             showLoginInterface();
         }
 
@@ -526,66 +564,73 @@
         // Message form
         document.getElementById('messageForm').addEventListener('submit', handleSendMessage);
 
-        // Message input auto-resize
+        // Auto-resize textarea
         const messageInput = document.getElementById('messageInput');
         messageInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+
+            // Handle typing indicator
+            handleTypingIndicator();
         });
 
-        // Room switching
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.conversation-item')) {
-                const conversationItem = e.target.closest('.conversation-item');
-                const conversationId = conversationItem.dataset.conversationId;
-                const otherUserId = conversationItem.dataset.otherUserId;
-                switchConversation(conversationId, otherUserId);
+        // Handle Enter key
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e);
             }
         });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // Handle beforeunload
+        window.addEventListener('beforeunload', cleanup);
     }
 
     async function handleLogin(e) {
         e.preventDefault();
-
         const loginBtn = document.getElementById('loginBtn');
-        const messageDiv = document.getElementById('loginMessage');
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
 
         loginBtn.disabled = true;
         loginBtn.textContent = 'Đang đăng nhập...';
-        messageDiv.innerHTML = '';
-
-        const formData = {
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value
-        };
 
         try {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ email, password })
             });
 
             const data = await response.json();
 
-            // Debug response
-            console.log('Login response:', {
-                status: response.status,
-                ok: response.ok,
-                data: data
-            });
-
-            if (response.ok && data.token && data.success) {
+            if (response.ok && data.token) {
                 // Save token and user data
                 localStorage.setItem('jwt_token', data.token);
-                localStorage.setItem('user_data', JSON.stringify(data));
 
-                currentUser = data;
+                // Ensure user data is properly saved
+                const userData = {
+                    id: data.id,
+                    username: data.username,
+                    email: data.email,
+                    role: data.role,
+                    avatarUrl: data.avatarUrl,
+                    token: data.token,
+                    type: data.type || 'Bearer',
+                    success: true
+                };
+
+                localStorage.setItem('user_data', JSON.stringify(userData));
+                currentUser = userData;
+
+                console.log('✅ Login successful, user data saved:', userData);
 
                 showMessage('Đăng nhập thành công!', 'success');
-
                 setTimeout(() => {
                     showChatInterface();
                     connectWebSocket();
@@ -611,17 +656,41 @@
         document.getElementById('loginContainer').classList.add('hidden');
         document.getElementById('chatContainer').classList.remove('hidden');
 
+        // Ensure currentUser is set before doing anything
+        if (!currentUser) {
+            const userData = localStorage.getItem('user_data');
+            if (userData) {
+                try {
+                    currentUser = JSON.parse(userData);
+                    console.log('🔄 Loaded currentUser from localStorage:', currentUser);
+                } catch (error) {
+                    console.error('❌ Error parsing user data:', error);
+                    logout();
+                    return;
+                }
+            } else {
+                console.error('❌ No user data found, redirecting to login');
+                logout();
+                return;
+            }
+        }
+
         if (currentUser) {
             document.getElementById('userName').textContent = currentUser.username || currentUser.email;
             const avatar = document.getElementById('userAvatar');
             avatar.textContent = (currentUser.username || currentUser.email).charAt(0).toUpperCase();
 
-            // Load conversations
+            console.log('✅ User interface setup complete for:', currentUser.username || currentUser.email);
+
+            // Load conversations first
             loadConversations();
 
-            // DISABLE polling để test WebSocket thuần
-            // startMessagePolling();
-            console.log('🧪 Polling disabled - testing pure WebSocket');
+            // Connect WebSocket AFTER currentUser is confirmed
+            console.log('🔌 Starting WebSocket connection for user:', currentUser.id);
+            connectWebSocket();
+        } else {
+            console.error('❌ Failed to set currentUser, redirecting to login');
+            logout();
         }
     }
 
@@ -632,219 +701,283 @@
             return;
         }
 
+        if (!currentUser) {
+            console.error('❌ No currentUser found when connecting WebSocket');
+            return;
+        }
+
         updateConnectionStatus(false, 'Đang kết nối...');
+        console.log('🔌 Connecting to WebSocket...');
 
         try {
+            // Clear existing connection
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect();
+            }
+
             const socket = new SockJS(WS_URL);
             stompClient = Stomp.over(socket);
 
-            // Set headers with JWT token
+            // Disable debug output for production
+            stompClient.debug = null;
+
             const headers = {
                 'Authorization': `Bearer ${token}`
             };
 
             stompClient.connect(headers,
                 function(frame) {
-                    console.log('WebSocket connected:', frame);
+                    console.log('✅ WebSocket connected:', frame);
+                    console.log('🔍 Frame headers:', frame.headers);
+                    console.log('🔍 Current user at connection:', currentUser);
+
                     updateConnectionStatus(true, 'Đã kết nối');
+                    reconnectAttempts = 0;
 
-                    // Subscribe to public room
-                    stompClient.subscribe('/topic/public', function(message) {
-                        const chatMessage = JSON.parse(message.body);
-                        displayMessage(chatMessage);
-                    });
-
-                    // Subscribe to private messages
+                    // Ensure currentUser is available before setting up subscriptions
                     if (currentUser && currentUser.id) {
-                        stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, function(message) {
-                            const chatMessage = JSON.parse(message.body);
-                            displayMessage(chatMessage);
-                            // Reload conversations to update unread count
-                            loadConversations();
-                        });
+                        console.log('📡 Setting up subscriptions for user:', currentUser.id);
+                        setupSubscriptions();
+                    } else {
+                        console.error('❌ CurrentUser not available for subscriptions:', currentUser);
+                        // Try to get user from localStorage again
+                        const userData = localStorage.getItem('user_data');
+                        if (userData) {
+                            try {
+                                currentUser = JSON.parse(userData);
+                                console.log('🔄 Recovered currentUser from localStorage:', currentUser);
+                                setupSubscriptions();
+                            } catch (e) {
+                                console.error('❌ Failed to recover currentUser:', e);
+                            }
+                        }
                     }
-
-                    // Send join notification - optional, can be removed if not needed
-                    // sendJoinNotification();
                 },
                 function(error) {
-                    console.error('WebSocket connection error:', error);
-                    updateConnectionStatus(false, 'Lỗi kết nối');
-
-                    // Retry connection after 5 seconds
-                    setTimeout(() => {
-                        connectWebSocket();
-                    }, 5000);
+                    console.error('❌ WebSocket connection failed:', error);
+                    updateConnectionStatus(false, 'Kết nối thất bại');
+                    handleReconnect();
                 }
             );
-        } catch (error) {
-            console.error('Failed to create WebSocket connection:', error);
-            updateConnectionStatus(false, 'Lỗi khởi tạo');
-        }
-    }
 
-    function updateConnectionStatus(connected, message) {
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('connectionStatus');
-
-        if (connected) {
-            statusDot.classList.add('connected');
-            statusText.textContent = message || 'Đã kết nối';
-        } else {
-            statusDot.classList.remove('connected');
-            statusText.textContent = message || 'Mất kết nối';
-        }
-    }
-
-    function sendJoinNotification() {
-        if (stompClient && stompClient.connected && currentUser) {
-            const message = {
-                type: 'JOIN',
-                content: `${currentUser.username || currentUser.email} đã tham gia chat`,
-                sender: currentUser.username || currentUser.email,
-                senderId: currentUser.id,
-                timestamp: new Date().toISOString()
+            // Handle socket events
+            socket.onclose = function(event) {
+                console.log('🔌 WebSocket connection closed:', event);
+                updateConnectionStatus(false, 'Đã ngắt kết nối');
+                handleReconnect();
             };
 
-            stompClient.send('/app/chat.addUser', {}, JSON.stringify(message));
+            socket.onerror = function(error) {
+                console.error('❌ WebSocket error:', error);
+                updateConnectionStatus(false, 'Lỗi kết nối');
+            };
+
+        } catch (error) {
+            console.error('❌ Failed to create WebSocket connection:', error);
+            updateConnectionStatus(false, 'Lỗi kết nối');
+            handleReconnect();
         }
     }
 
-    function handleSendMessage(e) {
-        e.preventDefault();
+    function setupSubscriptions() {
+        // Debug info
+        console.log('🔍 setupSubscriptions called');
+        console.log('🔍 stompClient:', stompClient);
+        console.log('🔍 stompClient.connected:', stompClient?.connected);
+        console.log('🔍 currentUser:', currentUser);
 
-        const messageInput = document.getElementById('messageInput');
-        const content = messageInput.value.trim();
-
-        if (!content || !stompClient || !stompClient.connected || !currentConversation) {
-            if (!currentConversation) {
-                alert('Vui lòng chọn một cuộc hội thoại để gửi tin nhắn');
+        // Clear existing subscriptions
+        subscriptions.forEach(sub => {
+            if (sub && sub.unsubscribe) {
+                sub.unsubscribe();
             }
+        });
+        subscriptions = [];
+
+        if (!stompClient || !stompClient.connected) {
+            console.error('❌ Cannot setup subscriptions: STOMP client not connected');
             return;
         }
 
-        // Get other user ID from current conversation
-        const conversation = conversations.find(c => c.id == currentConversation);
-        if (!conversation) return;
-
-        const otherUserId = conversation.otherUserId;
-
-        const message = {
-            senderId: currentUser.id,
-            receiverId: otherUserId,
-            content: content,
-            timestamp: new Date().toISOString()
-        };
-
-        console.log('Sending message:', message);
-
-        // Hiển thị tin nhắn ngay lập tức (optimistic UI)
-        const optimisticMessage = {
-            senderId: currentUser.id,
-            senderName: currentUser.username || currentUser.email,
-            content: content,
-            sentAt: new Date().toISOString(),
-            status: 'sending'
-        };
-        displayMessage(optimisticMessage);
-
-        // Send message via WebSocket
-        console.log('📤 Sending to /app/chat.send:', message);
-        stompClient.send('/app/chat.send', {}, JSON.stringify(message));
-
-        // Set timeout để kiểm tra xem có nhận được phản hồi không
-        setTimeout(() => {
-            console.log('⏰ Checking if message was received via WebSocket after 2 seconds...');
-            console.log('If you see this but no "📨 RAW WebSocket message received", then backend is not sending via WebSocket');
-
-            // Workaround: reload chat history to show new message
-            console.log('🔄 Reloading chat history as workaround...');
-            if (currentConversation) {
-                const conversation = conversations.find(c => c.id == currentConversation);
-                if (conversation) {
-                    loadChatHistory(conversation.otherUserId);
-                }
-            }
-
-            // Also reload conversations to update last message
-            loadConversations();
-        }, 1000); // Giảm xuống 1 giây để nhanh hơn
-
-        // Clear input
-        messageInput.value = '';
-        messageInput.style.height = 'auto';
-    }
-
-    function displayMessage(message) {
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageElement = document.createElement('div');
-
-        const isOwnMessage = currentUser && (message.senderId === currentUser.id);
-        messageElement.className = `message ${isOwnMessage ? 'own' : ''}`;
-
-        // ChatMessageResponse uses 'timestamp', not 'sentAt'
-        const messageTime = message.timestamp || message.sentAt || new Date().toISOString();
-        const timestamp = new Date(messageTime).toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        const senderName = isOwnMessage ? 'Bạn' : (message.senderName || 'Unknown');
-
-        // Status indicator
-        let statusIcon = '';
-        if (message.status === 'sending') {
-            statusIcon = '<span style="color: #94a3b8; font-size: 10px;">📤</span>';
-        } else if (message.status === 'read') {
-            statusIcon = '<span style="color: #10b981; font-size: 10px;">✓✓</span>';
-        } else {
-            statusIcon = '<span style="color: #64748b; font-size: 10px;">✓</span>';
+        if (!currentUser || !currentUser.id) {
+            console.error('❌ Cannot setup subscriptions: currentUser not found or invalid');
+            return;
         }
 
-        messageElement.innerHTML = `
-                <div class="message-avatar">
-                    ${senderName.charAt(0).toUpperCase()}
-                </div>
-                <div class="message-content">
-                    <div class="message-info">
-                        <span class="message-sender">${senderName}</span>
-                        <span class="message-time">${timestamp} ${isOwnMessage ? statusIcon : ''}</span>
-                    </div>
-                    <div class="message-bubble">
-                        ${escapeHtml(message.content)}
-                    </div>
-                </div>
-            `;
+        console.log('📡 Setting up WebSocket subscriptions...');
 
-        messagesContainer.appendChild(messageElement);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // Use custom queue destination based on userId
+        const userQueueDestination = `/queue/user-${currentUser.id}`;
+        console.log('🔑 Using custom queue destination:', userQueueDestination);
+
+        try {
+            // Subscribe to private messages using custom queue
+            const privateMessagesSub = stompClient.subscribe(userQueueDestination, function(message) {
+                console.log('📨 Received private message:', message.body);
+                handleReceivedMessage(message.body);
+            });
+            subscriptions.push(privateMessagesSub);
+            console.log('✅ Subscribed to:', userQueueDestination);
+
+            // Subscribe to typing indicators
+            const typingSub = stompClient.subscribe(`/queue/typing-${currentUser.id}`, function(message) {
+                console.log('⌨️ Received typing indicator:', message.body);
+                handleTypingIndicator(message.body);
+            });
+            subscriptions.push(typingSub);
+
+            // Subscribe to conversation updates
+            const conversationsSub = stompClient.subscribe(`/queue/conversations-${currentUser.id}`, function(message) {
+                console.log('📋 Received conversation update:', message.body);
+                handleConversationUpdate(message.body);
+            });
+            subscriptions.push(conversationsSub);
+
+            console.log('✅ WebSocket subscriptions setup complete');
+            console.log(`📡 Active subscriptions: ${subscriptions.length}`);
+
+        } catch (error) {
+            console.error('❌ Error setting up subscriptions:', error);
+        }
+    }
+
+    function handleReceivedMessage(messageBody) {
+        try {
+            const message = JSON.parse(messageBody);
+            console.log('✅ SUCCESSFULLY RECEIVED MESSAGE via WebSocket:', message);
+
+            // Debug current conversation state
+            console.log('🔍 Current conversation:', currentConversation);
+            console.log('🔍 Message senderId:', message.senderId);
+            console.log('🔍 Message receiverId:', message.receiverId);
+            console.log('🔍 Current user ID:', currentUser.id);
+
+
+            let shouldDisplay = false;
+
+            // Check if message is TO current user (incoming message)
+            if (message.receiverId === currentUser.id) {
+                shouldDisplay = true;
+                console.log('📱 Message TO current user - will display');
+            }
+            // Check if message is FROM current user (outgoing message)
+            else if (message.senderId === currentUser.id) {
+                shouldDisplay = true;
+                console.log('📱 Message FROM current user - will display');
+            }
+            // Check if it's for current conversation
+            else if (currentConversation &&
+                (message.senderId.toString() === currentConversation.otherUserId.toString() ||
+                    message.receiverId.toString() === currentConversation.otherUserId.toString())) {
+                shouldDisplay = true;
+                console.log('📱 Message for current conversation - will display');
+            }
+
+            console.log('🔍 Should display message:', shouldDisplay);
+
+            if (shouldDisplay) {
+                console.log('📱 Displaying message');
+
+            } else {
+                console.log('📱 Message not for display, updating conversation list only');
+            }
+
+            // Update conversation list
+            updateConversationPreview(message);
+
+            // Play notification sound if message is not from current user
+            if (message.senderId !== currentUser.id) {
+                playNotificationSound();
+                console.log('🔔 Played notification sound');
+            }
+
+        } catch (error) {
+            console.error('❌ Error handling received message:', error);
+            console.error('Raw message body:', messageBody);
+        }
+    }
+
+    function handleTypingIndicator(typingData) {
+        try {
+            const data = JSON.parse(typingData);
+
+            if (currentConversation && data.userId === currentConversation.otherUserId) {
+                if (data.typing) {
+                    showTypingIndicator(data.userName);
+                } else {
+                    hideTypingIndicator(data.userId);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error handling typing indicator:', error);
+        }
+    }
+
+    function handleConversationUpdate(updateData) {
+        try {
+            const data = JSON.parse(updateData);
+
+            // Reload conversations to reflect changes
+            loadConversations();
+
+        } catch (error) {
+            console.error('❌ Error handling conversation update:', error);
+        }
+    }
+
+    function handleReconnect() {
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            console.log('❌ Max reconnect attempts reached');
+            updateConnectionStatus(false, 'Kết nối thất bại');
+            return;
+        }
+
+        reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+
+        console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts}) in ${delay}ms...`);
+        updateConnectionStatus(false, `Đang kết nối lại... (${reconnectAttempts}/${maxReconnectAttempts})`);
+
+        if (reconnectInterval) {
+            clearTimeout(reconnectInterval);
+        }
+
+        reconnectInterval = setTimeout(() => {
+            connectWebSocket();
+        }, delay);
+    }
+
+    function updateConnectionStatus(connected, text) {
+        const statusIndicator = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('connectionText');
+
+        if (connected) {
+            statusIndicator.classList.add('connected');
+            statusText.textContent = text || 'Đã kết nối';
+        } else {
+            statusIndicator.classList.remove('connected');
+            statusText.textContent = text || 'Đã ngắt kết nối';
+        }
     }
 
     async function loadConversations() {
         const token = localStorage.getItem('jwt_token');
-        if (!token) return;
 
         try {
             const response = await fetch(`${API_BASE_URL}/chat/conversations`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
             if (response.ok) {
                 conversations = await response.json();
-                console.log('Loaded conversations:', conversations);
                 displayConversations(conversations);
             } else {
                 console.error('Failed to load conversations:', response.status);
-                document.getElementById('conversationsList').innerHTML =
-                    '<div style="text-align: center; color: #ef4444; padding: 20px;">Lỗi tải cuộc hội thoại</div>';
             }
         } catch (error) {
             console.error('Error loading conversations:', error);
-            document.getElementById('conversationsList').innerHTML =
-                '<div style="text-align: center; color: #ef4444; padding: 20px;">Lỗi kết nối</div>';
         }
     }
 
@@ -852,77 +985,47 @@
         const conversationsList = document.getElementById('conversationsList');
 
         if (conversations.length === 0) {
-            conversationsList.innerHTML =
-                '<div style="text-align: center; color: #64748b; padding: 20px;">Chưa có cuộc hội thoại nào</div>';
+            conversationsList.innerHTML = '<div class="loading-conversations">Chưa có cuộc hội thoại nào</div>';
             return;
         }
 
-        conversationsList.innerHTML = conversations.map(conv => {
-            // Sử dụng otherUserName thay vì participantNames
-            const otherUserName = conv.otherUserName || 'Unknown User';
-            const otherUserId = conv.otherUserId;
-
-            const lastActiveTime = conv.lastActive ?
-                new Date(conv.lastActive).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : '';
-
-            const unreadBadge = conv.unreadCount > 0 ?
-                `<div class="conversation-unread">${conv.unreadCount}</div>` : '';
-
-            // Hiển thị status user
-            const statusDot = conv.otherUserStatus === 'ONLINE' ?
-                '<div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; margin-left: 4px;"></div>' : '';
-
-            return `
-                    <div class="conversation-item" data-conversation-id="${conv.id}" data-other-user-id="${otherUserId}">
-                        <div class="conversation-header">
-                            <div class="conversation-name">
-                                ${escapeHtml(otherUserName)}${statusDot}
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <div class="conversation-time">${lastActiveTime}</div>
-                                ${unreadBadge}
-                            </div>
-                        </div>
-                        <div class="conversation-preview">
-                            ${escapeHtml(conv.lastMessage || 'Chưa có tin nhắn')}
-                        </div>
-                    </div>
-                `;
-        }).join('');
+        conversationsList.innerHTML = conversations.map(conversation => `
+                <div class="conversation-item ${conversation.id === currentConversation ? 'active' : ''}"
+                     onclick="selectConversation(${conversation.id}, '${conversation.otherUserId}', '${conversation.otherUserName}')">
+                    <div class="conversation-name">${conversation.otherUserName}</div>
+                    <div class="conversation-preview">${conversation.lastMessage || 'Chưa có tin nhắn'}</div>
+                    ${conversation.unreadCount > 0 ? `<div class="unread-count">${conversation.unreadCount}</div>` : ''}
+                </div>
+            `).join('');
     }
 
-    async function switchConversation(conversationId, otherUserId) {
-        currentConversation = conversationId;
+    function selectConversation(conversationId, otherUserId, otherUserName) {
+        currentConversation = {
+            id: conversationId,
+            otherUserId: otherUserId,
+            otherUserName: otherUserName
+        };
 
-        // Update active conversation
+        // Update UI
+        document.getElementById('currentRoomName').textContent = `Chat với ${otherUserName}`;
+
+        // Update conversation list
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
         });
-        document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
-
-        // Update conversation title
-        const conversation = conversations.find(c => c.id == conversationId);
-        if (conversation) {
-            const otherUserName = conversation.otherUserName || 'Unknown User';
-            document.getElementById('currentRoomName').textContent = `Chat với ${otherUserName}`;
-        }
+        event.target.closest('.conversation-item').classList.add('active');
 
         // Load chat history
-        await loadChatHistory(otherUserId);
+        loadChatHistory(otherUserId);
     }
 
     async function loadChatHistory(otherUserId) {
         const token = localStorage.getItem('jwt_token');
-        if (!token) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/chat/history?otherUserId=${otherUserId}`, {
+            const response = await fetch(`${API_BASE_URL}/chat/history/${otherUserId}`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -944,15 +1047,257 @@
         messages.forEach(message => {
             displayMessage(message);
         });
+
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    function logout() {
+    function handleSendMessage(e) {
+        e.preventDefault();
+        const messageInput = document.getElementById('messageInput');
+        const content = messageInput.value.trim();
+
+        if (!content || !currentConversation) return;
+
+        if (!stompClient || !stompClient.connected) {
+            showMessage('Chưa kết nối đến server. Vui lòng thử lại!', 'error');
+            return;
+        }
+
+        // Ensure receiverId is a number (backend expects Long)
+        const receiverId = parseInt(currentConversation.otherUserId);
+        if (isNaN(receiverId)) {
+            console.error('❌ Invalid receiverId:', currentConversation.otherUserId);
+            showMessage('Lỗi: ID người nhận không hợp lệ!', 'error');
+            return;
+        }
+
+        const message = {
+            senderId: parseInt(currentUser.id), // Ensure it's a number
+            receiverId: receiverId,
+            content: content,
+            timestamp: new Date().toISOString()
+        };
+
+        console.log('📤 Sending message via WebSocket:', message);
+        console.log('🔍 Backend will send to:');
+        console.log(`  - Sender: /user/${currentUser.email}/queue/messages (if using email)`);
+        console.log(`  - Sender: /user/${currentUser.id}/queue/messages (if using userId)`);
+
+        // Find receiver email from conversations
+        const conversation = conversations.find(c => c.id == currentConversation.id);
+        if (conversation && conversation.otherUserEmail) {
+            console.log(`  - Receiver: /user/${conversation.otherUserEmail}/queue/messages (email)`);
+            console.log(`  - Receiver: /user/${conversation.otherUserId}/queue/messages (userId)`);
+        } else {
+            console.log(`  - Receiver: Will be determined by backend`);
+        }
+
+        try {
+            // Send message via WebSocket
+            stompClient.send('/app/chat.send', {}, JSON.stringify(message));
+
+            // Display optimistic message
+            const optimisticMessage = {
+                ...message,
+                senderName: currentUser.username || currentUser.email,
+                status: 'sending'
+            };
+            displayMessage(optimisticMessage);
+
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            // Stop typing indicator
+            sendTypingIndicator(false);
+
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            showMessage('Lỗi gửi tin nhắn. Vui lòng thử lại!', 'error');
+        }
+    }
+
+    function displayMessage(message) {
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageElement = document.createElement('div');
+
+        const isOwnMessage = currentUser && (message.senderId === currentUser.id);
+        messageElement.className = `message ${isOwnMessage ? 'own' : ''}`;
+
+        const messageTime = message.timestamp || message.sentAt || new Date().toISOString();
+        const timestamp = new Date(messageTime).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const senderName = isOwnMessage ? 'Bạn' : (message.senderName || 'Unknown');
+        const status = message.status ? `<span class="message-status">${getStatusText(message.status)}</span>` : '';
+
+        messageElement.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${escapeHtml(message.content)}</div>
+                    <div class="message-meta">
+                        <span>${senderName} • ${timestamp}</span>
+                        ${status}
+                    </div>
+                </div>
+            `;
+
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function getStatusText(status) {
+        switch (status) {
+            case 'sending': return '⏳';
+            case 'sent': return '✓';
+            case 'delivered': return '✓✓';
+            case 'read': return '✓✓';
+            default: return '';
+        }
+    }
+
+    function updateConversationPreview(message) {
+        // Update the conversation list with new message preview
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        conversationItems.forEach(item => {
+            const conversationId = item.getAttribute('onclick').match(/selectConversation\((\d+)/)?.[1];
+            if (conversationId) {
+                const conv = conversations.find(c => c.id == conversationId);
+                if (conv && (conv.otherUserId === message.senderId || conv.otherUserId === message.receiverId)) {
+                    const preview = item.querySelector('.conversation-preview');
+                    if (preview) {
+                        preview.textContent = message.content.length > 50 ?
+                            message.content.substring(0, 50) + '...' :
+                            message.content;
+                    }
+                }
+            }
+        });
+    }
+
+    function sendTypingIndicator(isTyping) {
+        if (!stompClient || !stompClient.connected || !currentConversation) return;
+
+        const typingData = {
+            userId: currentUser.id,
+            userName: currentUser.username || currentUser.email,
+            receiverId: currentConversation.otherUserId,
+            typing: isTyping
+        };
+
+        try {
+            stompClient.send('/app/chat.typing', {}, JSON.stringify(typingData));
+        } catch (error) {
+            console.error('❌ Error sending typing indicator:', error);
+        }
+    }
+
+    function handleTypingIndicator() {
+        // Send typing indicator
+        sendTypingIndicator(true);
+
+        // Clear existing timeout
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+
+        // Set timeout to stop typing indicator
+        typingTimeout = setTimeout(() => {
+            sendTypingIndicator(false);
+        }, 2000);
+    }
+
+    function showTypingIndicator(userName) {
+        const messagesContainer = document.getElementById('messagesContainer');
+
+        // Remove existing typing indicator
+        const existingIndicator = messagesContainer.querySelector('.typing-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+
+        const typingElement = document.createElement('div');
+        typingElement.className = 'typing-indicator';
+        typingElement.innerHTML = `
+                ${userName} đang nhập...
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+
+        messagesContainer.appendChild(typingElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function hideTypingIndicator(userId) {
+        const messagesContainer = document.getElementById('messagesContainer');
+        const typingIndicator = messagesContainer.querySelector('.typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    function playNotificationSound() {
+        // Create a simple notification sound
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (error) {
+            console.log('Cannot play notification sound:', error);
+        }
+    }
+
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            console.log('📱 Page hidden - maintaining WebSocket connection');
+        } else {
+            console.log('📱 Page visible - checking WebSocket connection');
+            if (!stompClient || !stompClient.connected) {
+                console.log('🔄 Reconnecting WebSocket...');
+                connectWebSocket();
+            }
+        }
+    }
+
+    function cleanup() {
+        console.log('🧹 Cleaning up...');
+
+        // Stop typing indicator
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+        sendTypingIndicator(false);
+
+        // Clear reconnect interval
+        if (reconnectInterval) {
+            clearTimeout(reconnectInterval);
+        }
+
+        // Disconnect WebSocket
         if (stompClient && stompClient.connected) {
             stompClient.disconnect();
         }
+    }
 
-        // Stop message polling
-        stopMessagePolling();
+    function logout() {
+        cleanup();
 
         localStorage.removeItem('jwt_token');
         localStorage.removeItem('user_data');
@@ -964,37 +1309,13 @@
 
     function showMessage(message, type) {
         const messageDiv = document.getElementById('loginMessage');
-        messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+        messageDiv.className = `message ${type === 'error' ? 'error-message' : 'success-message'}`;
         messageDiv.textContent = message;
-    }
+        messageDiv.style.display = 'block';
 
-    // Test WebSocket connection
-    function testWebSocketConnection() {
-        if (stompClient && stompClient.connected) {
-            console.log('✅ WebSocket is connected');
-            console.log('Current user ID:', currentUser?.id);
-            console.log('Subscribed to:', `/user/${currentUser?.id}/queue/messages`);
-
-            // Test bằng cách gửi tin nhắn test
-            console.log('🧪 Testing subscription by sending a test message...');
-            if (currentConversation) {
-                const conversation = conversations.find(c => c.id == currentConversation);
-                if (conversation) {
-                    const testMessage = {
-                        senderId: currentUser.id,
-                        receiverId: conversation.otherUserId,
-                        content: '[TEST] Kiểm tra WebSocket connection',
-                        timestamp: new Date().toISOString()
-                    };
-                    stompClient.send('/app/chat.send', {}, JSON.stringify(testMessage));
-                    console.log('Test message sent:', testMessage);
-                }
-            }
-            return true;
-        } else {
-            console.log('❌ WebSocket is not connected');
-            return false;
-        }
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
     }
 
     function escapeHtml(text) {
@@ -1003,496 +1324,476 @@
         return div.innerHTML;
     }
 
-    // Auto-check for new messages periodically
-    let messageCheckInterval = null;
-
-    function startMessagePolling() {
-        if (messageCheckInterval) {
-            clearInterval(messageCheckInterval);
-        }
-
-        messageCheckInterval = setInterval(async () => {
-            if (currentConversation && conversations.length > 0) {
-                const conversation = conversations.find(c => c.id == currentConversation);
-                if (conversation) {
-                    // Reload chat history to check for new messages
-                    await loadChatHistory(conversation.otherUserId);
-                }
-            }
-
-            // Also reload conversations to update unread counts and last messages
-            await loadConversations();
-        }, 3000); // Check every 3 seconds
-    }
-
-    function stopMessagePolling() {
-        if (messageCheckInterval) {
-            clearInterval(messageCheckInterval);
-            messageCheckInterval = null;
-        }
-    }
-
-    // Test WebSocket connection
-    function testWebSocketConnection() {
+    // Debug functions for testing
+    window.testWebSocket = function() {
         if (stompClient && stompClient.connected) {
             console.log('✅ WebSocket is connected');
-            console.log('Current user ID:', currentUser?.id);
-            console.log('Subscribed to:', `/user/${currentUser?.id}/queue/messages`);
+            console.log('Current user:', currentUser);
+            console.log('Current conversation:', currentConversation);
+            console.log('Subscriptions count:', subscriptions.length);
+
+            // Show all subscription paths
+            console.log('📡 Subscription paths:');
+            console.log(`  - /user/${currentUser.email}/queue/messages`);
+            console.log(`  - /user/${currentUser.id}/queue/messages`);
+
             return true;
         } else {
             console.log('❌ WebSocket is not connected');
             return false;
         }
-    }
+    };
 
-    // Test backend API directly
-    async function testBackendAPI() {
-        const token = localStorage.getItem('jwt_token');
+    window.forceReconnect = function() {
+        console.log('🔄 Force reconnecting WebSocket...');
+        reconnectAttempts = 0;
+        connectWebSocket();
+    };
+
+    window.testMessage = function(content = 'Test message from console') {
         if (!currentConversation) {
             console.log('❌ No conversation selected');
             return;
         }
 
-        const conversation = conversations.find(c => c.id == currentConversation);
-        if (!conversation) {
-            console.log('❌ Conversation not found');
-            return;
-        }
-
-        const testMessage = {
+        const message = {
             senderId: currentUser.id,
-            receiverId: conversation.otherUserId,
-            content: '[API TEST] Testing via direct API call',
+            receiverId: currentConversation.otherUserId,
+            content: content,
             timestamp: new Date().toISOString()
         };
 
-        try {
-            console.log('🧪 Testing direct API call to save message...');
-            const response = await fetch(`${API_BASE_URL}/chat/send`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(testMessage)
+        if (stompClient && stompClient.connected) {
+            stompClient.send('/app/chat.send', {}, JSON.stringify(message));
+            console.log('✅ Test message sent:', message);
+            console.log('🔍 Expected to receive on:');
+            console.log(`  - /user/${currentUser.email}/queue/messages (sender)`);
+
+            // Find receiver info
+            const conversation = conversations.find(c => c.id == currentConversation.id);
+            if (conversation) {
+                console.log(`  - /user/{receiver_email}/queue/messages (receiver)`);
+            }
+        } else {
+            console.log('❌ WebSocket not connected');
+        }
+    };
+
+    window.debugUser = function() {
+        console.log('=== USER DEBUG INFO ===');
+        console.log('Current user object:', currentUser);
+        console.log('User ID:', currentUser?.id);
+        console.log('User email:', currentUser?.email);
+        console.log('User username:', currentUser?.username);
+        console.log('JWT token exists:', !!localStorage.getItem('jwt_token'));
+        console.log('Current conversation:', currentConversation);
+    };
+
+    window.testSelfMessage = function() {
+        console.log('🧪 Testing self message...');
+        const message = {
+            senderId: currentUser.id,
+            receiverId: currentUser.id,
+            content: '[SELF TEST] Testing WebSocket to myself',
+            timestamp: new Date().toISOString()
+        };
+
+        if (stompClient && stompClient.connected) {
+            stompClient.send('/app/chat.send', {}, JSON.stringify(message));
+            console.log('📤 Self test message sent:', message);
+            console.log('🔍 Should receive on:', `/queue/user-${currentUser.id}`);
+        } else {
+            console.log('❌ WebSocket not connected');
+        }
+    };
+
+    // Test backend debug - check if backend is processing messages
+    window.testBackendReceive = function() {
+        console.log('🧪 Testing backend message processing...');
+        console.log('📡 Current subscriptions count:', subscriptions.length);
+
+        // Create a test subscription to see raw WebSocket traffic
+        if (stompClient && stompClient.connected) {
+            console.log('🔍 Creating debug subscriptions to catch ALL possible message paths...');
+
+            const debugSubs = [];
+
+            // Try all possible subscription paths
+            const paths = [
+                '/user/queue/messages',
+                '/queue/messages',
+                '/topic/messages',
+                `/user/${currentUser.email}/queue/messages`,
+                `/user/${currentUser.id}/queue/messages`,
+                `/user/${currentUser.username || currentUser.email}/queue/messages`,
+                '/topic/chat',
+                '/queue/chat',
+                '/user/queue/chat'
+            ];
+
+            paths.forEach((path, index) => {
+                try {
+                    const debugSub = stompClient.subscribe(path, function(message) {
+                        console.log(`🎯 RECEIVED ON [${path}]:`, message.body);
+                        console.log('🎯 Message headers:', message.headers);
+
+                        // Try to parse and display
+                        try {
+                            const parsed = JSON.parse(message.body);
+                            console.log('🎯 Parsed message:', parsed);
+                            displayMessage(parsed);
+                        } catch (e) {
+                            console.log('🎯 Could not parse message:', e);
+                        }
+                    });
+                    debugSubs.push(debugSub);
+                    console.log(`✅ Debug subscription ${index + 1} created: ${path}`);
+                } catch (e) {
+                    console.log(`❌ Failed to create subscription for ${path}:`, e);
+                }
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                console.log('✅ API call successful:', result);
-            } else {
-                console.log('❌ API call failed:', response.status);
-            }
-        } catch (error) {
-            console.error('❌ API call error:', error);
-        }
-    }
+            console.log(`✅ ${debugSubs.length} debug subscriptions created`);
 
-    // Test alternative WebSocket method
-    function testAlternativeWebSocket() {
+            // Send test message after a short delay
+            setTimeout(() => {
+                console.log('🚀 Sending test message now...');
+                testSelfMessage();
+            }, 1000);
+
+            // Store debug subscriptions for cleanup
+            window.debugSubs = debugSubs;
+
+            // Auto cleanup after 30 seconds
+            setTimeout(() => {
+                console.log('⏰ Auto-cleaning debug subscriptions after 30s...');
+                cleanupDebugSubs();
+            }, 30000);
+
+        } else {
+            console.log('❌ WebSocket not connected');
+        }
+    };
+
+    // Debug WebSocket authentication and user resolution
+    window.debugWebSocketAuth = function() {
+        console.log('🔐 DEBUGGING WEBSOCKET AUTHENTICATION');
+        console.log('====================================');
+
+        const token = localStorage.getItem('jwt_token');
+        console.log('JWT Token exists:', !!token);
+        console.log('JWT Token (first 50 chars):', token ? token.substring(0, 50) + '...' : 'null');
+
+        console.log('Current user:', currentUser);
+        console.log('WebSocket connected:', stompClient?.connected);
+        console.log('WebSocket URL:', WS_URL);
+
+        // Try subscribing to different user destination patterns
+        if (stompClient && stompClient.connected) {
+            console.log('🧪 Testing different user destination patterns...');
+
+            const patterns = [
+                `/user/queue/messages`,  // No user prefix - might work if Spring auto-resolves
+                `/queue/messages`,       // Direct queue
+                `/user/${currentUser.email}/queue/messages`,  // Email
+                `/user/${currentUser.username}/queue/messages`,  // Username
+                `/user/${currentUser.id}/queue/messages`,    // ID
+            ];
+
+            const testSubs = [];
+
+            patterns.forEach((pattern, index) => {
+                try {
+                    const sub = stompClient.subscribe(pattern, function(message) {
+                        console.log(`🎯 PATTERN ${index + 1} SUCCESS [${pattern}]:`, message.body);
+                        alert(`SUCCESS on pattern: ${pattern}\nMessage: ${message.body}`);
+                    });
+                    testSubs.push(sub);
+                    console.log(`✅ Pattern ${index + 1} subscribed: ${pattern}`);
+                } catch (e) {
+                    console.log(`❌ Pattern ${index + 1} failed: ${pattern} - ${e.message}`);
+                }
+            });
+
+            // Send test message after 2 seconds
+            setTimeout(() => {
+                console.log('📤 Sending test message for pattern testing...');
+                const testMsg = {
+                    senderId: currentUser.id,
+                    receiverId: currentUser.id,
+                    content: '[PATTERN TEST] Testing all subscription patterns',
+                    timestamp: new Date().toISOString()
+                };
+                stompClient.send('/app/chat.send', {}, JSON.stringify(testMsg));
+            }, 2000);
+
+            // Store for cleanup
+            window.patternTestSubs = testSubs;
+
+            // Auto cleanup
+            setTimeout(() => {
+                testSubs.forEach(sub => {
+                    if (sub && sub.unsubscribe) {
+                        sub.unsubscribe();
+                    }
+                });
+                window.patternTestSubs = [];
+                console.log('🧹 Pattern test subscriptions cleaned up');
+            }, 30000);
+
+        } else {
+            console.log('❌ WebSocket not connected - cannot test patterns');
+        }
+    };
+
+    // Force reconnect with detailed logging
+    window.forceReconnectDetailed = function() {
+        console.log('🔄 FORCE RECONNECT WITH DETAILED LOGGING');
+        console.log('======================================');
+
+        // Cleanup existing connection
+        if (stompClient && stompClient.connected) {
+            console.log('🧹 Disconnecting existing WebSocket...');
+            stompClient.disconnect();
+        }
+
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            console.log('❌ No JWT token found');
+            return;
+        }
+
+        console.log('🔌 Creating new WebSocket connection...');
+        console.log('Token (first 20 chars):', token.substring(0, 20) + '...');
+
+        try {
+            const socket = new SockJS(WS_URL);
+            stompClient = Stomp.over(socket);
+
+            // Enable debug
+            stompClient.debug = function(str) {
+                console.log('STOMP DEBUG:', str);
+            };
+
+            const headers = {
+                'Authorization': `Bearer ${token}`
+            };
+
+            console.log('🔐 Connecting with headers:', headers);
+
+            stompClient.connect(headers,
+                function(frame) {
+                    console.log('✅ WebSocket connected successfully:', frame);
+                    console.log('Frame details:', frame);
+                    console.log('Frame headers:', frame.headers);
+
+                    updateConnectionStatus(true, 'Đã kết nối');
+
+                    // Setup subscriptions after successful connect
+                    setTimeout(() => {
+                        setupSubscriptions();
+                        console.log('📡 Subscriptions setup complete');
+
+                        // Test immediately
+                        setTimeout(() => {
+                            testSelfMessage();
+                        }, 1000);
+                    }, 500);
+                },
+                function(error) {
+                    console.error('❌ WebSocket connection failed:', error);
+                    updateConnectionStatus(false, 'Kết nối thất bại');
+                }
+            );
+
+        } catch (error) {
+            console.error('❌ Failed to create WebSocket:', error);
+        }
+    };
+
+    // Test with URL encoded username
+    window.testEncodedUsername = function() {
+        console.log('🧪 Testing with URL encoded username...');
+
         if (!stompClient || !stompClient.connected) {
             console.log('❌ WebSocket not connected');
             return;
         }
 
-        console.log('🧪 Testing alternative WebSocket approach...');
+        const rawUsername = currentUser.username;
+        const encodedUsername = encodeURIComponent(rawUsername);
 
-        // Subscribe to a more general topic
-        stompClient.subscribe('/topic/chat', function(message) {
-            console.log('📨 Received from /topic/chat:', message.body);
-            try {
-                const chatMessage = JSON.parse(message.body);
-                displayMessage(chatMessage);
-            } catch (e) {
-                console.error('Error parsing /topic/chat message:', e);
-            }
-        });
+        console.log('Raw username:', rawUsername);
+        console.log('Encoded username:', encodedUsername);
 
-        // Subscribe to user queue without user prefix
-        stompClient.subscribe(`/queue/messages/${currentUser.id}`, function(message) {
-            console.log('📨 Received from queue/messages/userId:', message.body);
-            try {
-                const chatMessage = JSON.parse(message.body);
-                displayMessage(chatMessage);
-            } catch (e) {
-                console.error('Error parsing queue message:', e);
-            }
-        });
-
-        console.log('✅ Subscribed to alternative channels');
-    }
-
-    function connectWebSocketWithoutAuth() {
-        console.log('🧪 Testing WebSocket connection WITHOUT JWT token...');
-
-        try {
-            const socket = new SockJS(WS_URL);
-            const testClient = Stomp.over(socket);
-
-            testClient.connect({},
-                function(frame) {
-                    console.log('✅ WebSocket connected WITHOUT auth:', frame);
-
-                    // Subscribe to basic channels
-                    testClient.subscribe('/topic/test', function(msg) {
-                        console.log('📨 TEST: Received from /topic/test:', msg.body);
-                    });
-
-                    testClient.subscribe('/queue/messages', function(msg) {
-                        console.log('📨 TEST: Received from /queue/messages:', msg.body);
-                    });
-
-                    console.log('✅ Test subscriptions created');
-                    window.testClient = testClient;
-                },
-                function(error) {
-                    console.error('❌ WebSocket connection failed WITHOUT auth:', error);
-                }
-            );
-        } catch (error) {
-            console.error('❌ Failed to create test WebSocket:', error);
-        }
-    }
-
-    // Debug all subscriptions
-    function debugSubscriptions() {
-        console.log('=== SUBSCRIPTION DEBUG ===');
-        console.log('Current user ID:', currentUser?.id);
-        console.log('WebSocket connected:', stompClient?.connected);
-        console.log('Main subscription:', mainSubscription);
-        console.log('Alt subscription:', altSubscription);
-        console.log('Topic subscription:', topicSubscription);
-        console.log('Window mainSub:', window.mainSub);
-        console.log('Window altSub:', window.altSub);
-        console.log('Window topicSub:', window.topicSub);
-
-        if (stompClient && stompClient.connected) {
-            console.log('🔔 WebSocket is connected and ready');
-            console.log('🔔 Expected to receive messages on:');
-            console.log('  - /user/' + currentUser.id + '/queue/messages');
-            console.log('  - /queue/messages');
-            console.log('  - /topic/messages');
-
-            // Test if we can create a new subscription right now
-            console.log('🧪 Testing if we can create subscription now...');
-            try {
-                const testSub = stompClient.subscribe('/topic/test-debug', function(msg) {
-                    console.log('📨 TEST-DEBUG: Received message:', msg.body);
-                });
-                console.log('✅ Test subscription created successfully:', testSub);
-                window.testDebugSub = testSub;
-            } catch (e) {
-                console.error('❌ Failed to create test subscription:', e);
-            }
-        } else {
-            console.log('❌ WebSocket not connected');
-        }
-    }
-
-    // Test sending message to self
-    function testSelfMessage() {
-        if (!stompClient || !stompClient.connected || !currentUser) {
-            console.log('❌ Cannot test - WebSocket not ready');
-            return;
-        }
-
-        console.log('🧪 Testing self message...');
-        const testMessage = {
-            senderId: currentUser.id,
-            receiverId: currentUser.id, // Send to self
-            content: '[SELF TEST] Testing WebSocket to myself',
-            timestamp: new Date().toISOString()
-        };
-
-        console.log('📤 Sending self test message:', testMessage);
-        stompClient.send('/app/chat.send', {}, JSON.stringify(testMessage));
-    }
-
-    // Force recreate subscriptions
-    function recreateSubscriptions() {
-        if (!stompClient || !stompClient.connected || !currentUser) {
-            console.log('❌ Cannot recreate subscriptions - WebSocket not ready or no user');
-            return;
-        }
-
-        console.log('🔄 Recreating all subscriptions...');
-
-        try {
-            // Unsubscribe existing ones first
-            if (mainSubscription) {
-                mainSubscription.unsubscribe();
-            }
-            if (altSubscription) {
-                altSubscription.unsubscribe();
-            }
-            if (topicSubscription) {
-                topicSubscription.unsubscribe();
-            }
-
-            // Create new subscriptions
-            mainSubscription = stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, function(messagePayload) {
-                console.log('📨 RECREATED MAIN: Message received:', messagePayload.body);
-                try {
-                    const chatMessage = JSON.parse(messagePayload.body);
-                    displayMessage(chatMessage);
-                    loadConversations();
-                } catch (e) {
-                    console.error('❌ RECREATED MAIN: Error parsing:', e);
-                }
-            });
-
-            altSubscription = stompClient.subscribe(`/queue/messages`, function(messagePayload) {
-                console.log('📨 RECREATED ALT: Message received:', messagePayload.body);
-                try {
-                    const chatMessage = JSON.parse(messagePayload.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ RECREATED ALT: Error parsing:', e);
-                }
-            });
-
-            topicSubscription = stompClient.subscribe(`/topic/messages`, function(messagePayload) {
-                console.log('📨 RECREATED TOPIC: Message received:', messagePayload.body);
-                try {
-                    const chatMessage = JSON.parse(messagePayload.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ RECREATED TOPIC: Error parsing:', e);
-                }
-            });
-
-            console.log('✅ All subscriptions recreated successfully!');
-            console.log('Main:', mainSubscription);
-            console.log('Alt:', altSubscription);
-            console.log('Topic:', topicSubscription);
-
-        } catch (e) {
-            console.error('❌ Error recreating subscriptions:', e);
-        }
-    }
-
-    // Test different subscription patterns
-    function testAlternativeSubscriptions() {
-        if (!stompClient || !stompClient.connected || !currentUser) {
-            console.log('❌ Cannot test - WebSocket not ready');
-            return;
-        }
-
-        console.log('🧪 Testing alternative subscription patterns...');
-
-        try {
-            // Try with username instead of ID
-            const usernameSub = stompClient.subscribe(`/user/${currentUser.username || currentUser.email}/queue/messages`, function(msg) {
-                console.log('📨 USERNAME SUB: Received:', msg.body);
-                try {
-                    const chatMessage = JSON.parse(msg.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ USERNAME SUB: Parse error:', e);
-                }
-            });
-            console.log('✅ Username subscription created:', usernameSub);
-
-            // Try different queue patterns
-            const queueSub1 = stompClient.subscribe(`/queue/user/${currentUser.id}`, function(msg) {
-                console.log('📨 QUEUE1 SUB: Received:', msg.body);
-                try {
-                    const chatMessage = JSON.parse(msg.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ QUEUE1 SUB: Parse error:', e);
-                }
-            });
-            console.log('✅ Queue1 subscription created:', queueSub1);
-
-            // Try general user queue
-            const queueSub2 = stompClient.subscribe(`/user/queue/messages`, function(msg) {
-                console.log('📨 QUEUE2 SUB: Received:', msg.body);
-                try {
-                    const chatMessage = JSON.parse(msg.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ QUEUE2 SUB: Parse error:', e);
-                }
-            });
-            console.log('✅ Queue2 subscription created:', queueSub2);
-
-            window.usernameSub = usernameSub;
-            window.queueSub1 = queueSub1;
-            window.queueSub2 = queueSub2;
-
-        } catch (e) {
-            console.error('❌ Error creating alternative subscriptions:', e);
-        }
-    }
-
-    // Test WebSocket authentication
-    function testWebSocketAuth() {
-        console.log('🧪 Testing WebSocket authentication...');
-        console.log('JWT Token:', localStorage.getItem('jwt_token')?.substring(0, 50) + '...');
-        console.log('Current User:', currentUser);
-
-        if (stompClient && stompClient.connected) {
-            // Try to subscribe to a simple destination to test auth
-            try {
-                const authTestSub = stompClient.subscribe('/user/queue/test', function(msg) {
-                    console.log('📨 AUTH TEST: Received on /user/queue/test:', msg.body);
-                });
-                console.log('✅ Auth test subscription created:', authTestSub);
-
-                // Try to send a message to ourselves through the backend
-                stompClient.send('/app/chat.send', {}, JSON.stringify({
-                    senderId: currentUser.id,
-                    receiverId: currentUser.id,
-                    content: '[AUTH TEST] Testing authentication',
-                    timestamp: new Date().toISOString()
-                }));
-
-                console.log('📤 Auth test message sent to self');
-
-            } catch (e) {
-                console.error('❌ Auth test failed:', e);
-            }
-        }
-    }
-
-    // Test different user ID formats
-    function testUserIdFormats() {
-        if (!stompClient || !stompClient.connected || !currentUser) {
-            console.log('❌ Cannot test - WebSocket not ready');
-            return;
-        }
-
-        console.log('🧪 Testing different UserID formats...');
-
-        const formats = [
-            `/user/${currentUser.id}/queue/messages`,           // Current format
-            `/user/${currentUser.username}/queue/messages`,     // Username
-            `/user/${currentUser.email}/queue/messages`,        // Email
-            `/queue/user-${currentUser.id}`,                    // Alternative format
-            `/queue/${currentUser.id}/messages`,                // Direct queue
-            `/topic/user-${currentUser.id}`,                    // Topic format
+        // Test multiple username formats
+        const usernameFormats = [
+            rawUsername,                    // "Trần Bác Sĩ"
+            encodedUsername,               // "Tr%E1%BA%A7n%20B%C3%A1c%20S%C4%A9"
+            rawUsername.replace(/\s+/g, '_'), // "Trần_Bác_Sĩ"
+            rawUsername.replace(/\s+/g, '-'), // "Trần-Bác-Sĩ"
+            'user-' + currentUser.id       // "user-2"
         ];
 
-        formats.forEach((destination, index) => {
+        const testSubs = [];
+
+        usernameFormats.forEach((format, index) => {
             try {
-                const sub = stompClient.subscribe(destination, function(msg) {
-                    console.log(`📨 FORMAT ${index}: Received on ${destination}:`, msg.body);
-                    try {
-                        const chatMessage = JSON.parse(msg.body);
-                        displayMessage(chatMessage);
-                    } catch (e) {
-                        console.error(`❌ FORMAT ${index}: Parse error:`, e);
-                    }
+                const path = `/user/${format}/queue/messages`;
+                const sub = stompClient.subscribe(path, function(message) {
+                    console.log(`🎯 SUCCESS with format ${index + 1} [${format}]:`, message.body);
+                    alert(`SUCCESS with format: ${format}\nMessage: ${message.body}`);
+                    handleReceivedMessage(message.body);
                 });
-                console.log(`✅ Format ${index} subscription created for: ${destination}`);
+                testSubs.push(sub);
+                console.log(`✅ Format ${index + 1} subscribed: /user/${format}/queue/messages`);
             } catch (e) {
-                console.error(`❌ Format ${index} failed for ${destination}:`, e);
+                console.log(`❌ Format ${index + 1} failed: ${format} - ${e.message}`);
             }
         });
-    }
 
-    // Test subscription with email as user identifier
-    function testEmailSubscription() {
-        if (!stompClient || !stompClient.connected || !currentUser) {
-            console.log('❌ Cannot test - WebSocket not ready');
+        // Send test message
+        setTimeout(() => {
+            console.log('📤 Sending test message for username format testing...');
+            const testMsg = {
+                senderId: currentUser.id,
+                receiverId: currentUser.id,
+                content: '[USERNAME FORMAT TEST] Testing different username formats',
+                timestamp: new Date().toISOString()
+            };
+            stompClient.send('/app/chat.send', {}, JSON.stringify(testMsg));
+        }, 1000);
+
+        // Store for cleanup
+        window.usernameFormatSubs = testSubs;
+
+        // Auto cleanup after 30 seconds
+        setTimeout(() => {
+            testSubs.forEach(sub => {
+                if (sub && sub.unsubscribe) {
+                    sub.unsubscribe();
+                }
+            });
+            window.usernameFormatSubs = [];
+            console.log('🧹 Username format test subscriptions cleaned up');
+        }, 30000);
+    };
+
+    // Ultimate debug test - bypass everything and test direct WebSocket
+    window.ultimateTest = function() {
+        console.log('🚀 ULTIMATE WEBSOCKET TEST');
+        console.log('========================');
+
+        if (!stompClient || !stompClient.connected) {
+            console.log('❌ WebSocket not connected');
             return;
         }
 
-        console.log('🧪 Testing subscription with EMAIL as user identifier...');
-        console.log('User email:', currentUser.email);
+        // Create the most comprehensive subscription test
+        const allPossiblePaths = [
+            '/user/queue/messages',
+            '/queue/messages',
+            '/topic/messages',
+            '/topic/chat',
+            '/user/2/queue/messages', // Hardcoded current user ID
+            '/user/queue/2',
+            `/user/${currentUser.id}/queue/messages`,
+            `/user/${currentUser.email}/queue/messages`,
+            `/queue/user-${currentUser.id}`,
+            '/topic/broadcast',
+            '/queue/reply'
+        ];
 
-        try {
-            // This should be the correct format based on WebSocket config
-            const emailSub = stompClient.subscribe(`/user/${currentUser.email}/queue/messages`, function(messagePayload) {
-                console.log('📨 EMAIL SUB: RECEIVED MESSAGE!', messagePayload.body);
+        console.log('🔍 Creating subscriptions for ALL possible paths...');
+        const subs = [];
+
+        allPossiblePaths.forEach((path, index) => {
+            try {
+                const sub = stompClient.subscribe(path, function(message) {
+                    console.log(`🎯 JACKPOT! Received on [${path}]:`, message);
+                    console.log('🎯 Message body:', message.body);
+                    console.log('🎯 Message headers:', message.headers);
+
+                    // Try to display the message
+                    try {
+                        const parsed = JSON.parse(message.body);
+                        console.log('🎯 Parsed successfully:', parsed);
+                        // Force display regardless of conversation
+                        displayMessage(parsed);
+                    } catch (e) {
+                        console.log('🎯 Raw message (not JSON):', message.body);
+                    }
+                });
+                subs.push(sub);
+                console.log(`✅ [${index + 1}] Subscribed to: ${path}`);
+            } catch (e) {
+                console.log(`❌ [${index + 1}] Failed: ${path} - ${e.message}`);
+            }
+        });
+
+        console.log(`📡 Created ${subs.length} subscriptions`);
+
+        // Send to multiple possible endpoints
+        const testEndpoints = [
+            '/app/chat.send',
+            '/app/chat',
+            '/app/message.send',
+            '/app/send',
+            '/app/test'
+        ];
+
+        const message = {
+            senderId: currentUser.id,
+            receiverId: currentUser.id,
+            content: '[ULTIMATE TEST] Testing all endpoints and subscriptions',
+            timestamp: new Date().toISOString(),
+            type: 'CHAT'
+        };
+
+        console.log('📤 Sending test message to multiple endpoints...');
+        testEndpoints.forEach((endpoint, index) => {
+            setTimeout(() => {
                 try {
-                    const chatMessage = JSON.parse(messagePayload.body);
-                    console.log('📨 EMAIL SUB: Parsed message:', chatMessage);
-                    displayMessage(chatMessage);
-                    loadConversations();
+                    console.log(`📤 [${index + 1}] Sending to: ${endpoint}`);
+                    stompClient.send(endpoint, {}, JSON.stringify(message));
                 } catch (e) {
-                    console.error('❌ EMAIL SUB: Parse error:', e);
+                    console.error(`❌ [${index + 1}] Failed to send to ${endpoint}:`, e);
+                }
+            }, (index + 1) * 500); // 500ms delay between sends
+        });
+
+        // Store subscriptions for cleanup
+        window.ultimateSubs = subs;
+
+        // Auto cleanup after 1 minute
+        setTimeout(() => {
+            console.log('⏰ Auto-cleaning ultimate test subscriptions...');
+            subs.forEach(sub => {
+                if (sub && sub.unsubscribe) {
+                    sub.unsubscribe();
                 }
             });
+            window.ultimateSubs = [];
+        }, 60000);
 
-            console.log('✅ Email subscription created:', emailSub);
-            window.emailSub = emailSub;
+        console.log('🎯 If ANY message is received, you will see "JACKPOT!" above');
+        console.log('⏰ Test will auto-cleanup in 60 seconds');
+    };
 
-            // Also try without the email domain part
-            const usernamePart = currentUser.email.split('@')[0]; // "longNguyen"
-            const usernameOnlySub = stompClient.subscribe(`/user/${usernamePart}/queue/messages`, function(messagePayload) {
-                console.log('📨 USERNAME ONLY SUB: RECEIVED MESSAGE!', messagePayload.body);
-                try {
-                    const chatMessage = JSON.parse(messagePayload.body);
-                    displayMessage(chatMessage);
-                } catch (e) {
-                    console.error('❌ USERNAME ONLY SUB: Parse error:', e);
-                }
-            });
+    // Auto-scroll to bottom when new messages arrive
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (messagesContainer) {
+        const observer = new MutationObserver(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
 
-            console.log('✅ Username-only subscription created:', usernameOnlySub);
-            window.usernameOnlySub = usernameOnlySub;
-
-        } catch (e) {
-            console.error('❌ Error creating email subscriptions:', e);
-        }
+        observer.observe(messagesContainer, {
+            childList: true,
+            subtree: true
+        });
     }
 
-    // Add debug functions to window
-    window.testWS = testWebSocketConnection;
-    window.testAPI = testBackendAPI;
-    window.testAlt = testAlternativeWebSocket;
-    window.debugSubs = debugSubscriptions;
-    window.testNoAuth = connectWebSocketWithoutAuth;
-    window.recreateSubs = recreateSubscriptions;
-    window.testSelf = testSelfMessage;
-    window.testAltSubs = testAlternativeSubscriptions;
-    window.testAuth = testWebSocketAuth;
-    window.testFormats = testUserIdFormats;
-    window.testEmail = testEmailSubscription;
-    window.currentUser = () => currentUser;
-    window.conversations = () => conversations;
-    window.stompClient = () => stompClient;
-
-    // Handle page visibility changes
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            // Page is hidden - reduce polling frequency
-            console.log('Page hidden, reducing polling frequency');
-            if (messageCheckInterval) {
-                clearInterval(messageCheckInterval);
-                messageCheckInterval = setInterval(async () => {
-                    if (currentConversation && conversations.length > 0) {
-                        const conversation = conversations.find(c => c.id == currentConversation);
-                        if (conversation) {
-                            await loadChatHistory(conversation.otherUserId);
-                        }
-                    }
-                    await loadConversations();
-                }, 10000); // Poll every 10 seconds when hidden
-            }
-        } else {
-            // Page is visible - resume normal polling
-            console.log('Page visible, resuming normal polling');
-            if (currentUser && (!stompClient || !stompClient.connected)) {
-                console.log('Page visible, reconnecting WebSocket...');
-                connectWebSocket();
-            }
-            // Restart normal polling
-            if (currentUser) {
-                startMessagePolling();
-            }
-        }
-    });
-
-    // Handle beforeunload
-    window.addEventListener('beforeunload', function() {
-        stopMessagePolling();
-        if (stompClient && stompClient.connected) {
-            stompClient.disconnect();
-        }
-    });
+    console.log('🚀 Chat application initialized with WebSocket real-time support');
 </script>
 </body>
 </html>

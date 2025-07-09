@@ -40,7 +40,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(" https://86b8-42-114-121-96.ngrok-free.app")
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 
@@ -71,16 +71,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                                accessor.setUser(authentication);
 
-                                // Lưu userId vào session attributes để sử dụng sau
+                                // ✨ KEY CHANGE: Set user as userId instead of username
                                 if (userDetails instanceof com.hospital.telemedicine.security.UserDetailsImpl) {
                                     Long userId = ((com.hospital.telemedicine.security.UserDetailsImpl) userDetails).getId();
+
+                                    // Create a custom Principal with userId as name
+                                    CustomUserPrincipal customPrincipal = new CustomUserPrincipal(userId.toString(), userDetails);
+                                    UsernamePasswordAuthenticationToken customAuth =
+                                            new UsernamePasswordAuthenticationToken(customPrincipal, null, userDetails.getAuthorities());
+
+                                    accessor.setUser(customAuth);
+
+                                    // Lưu userId vào session attributes để sử dụng sau
                                     accessor.getSessionAttributes().put("userId", userId);
-                                    accessor.getSessionAttributes().put("username", username);
+                                    accessor.getSessionAttributes().put("username", userDetails.getUsername());
+
+                                    System.out.println("✅ WebSocket authenticated user: " + userDetails.getUsername() + " with userId: " + userId);
+                                    System.out.println("🔑 Spring WebSocket will use userId as destination: " + userId);
+                                } else {
+                                    // Fallback to original username
+                                    accessor.setUser(authentication);
+                                    System.out.println("⚠️ WebSocket authenticated user (fallback): " + username);
                                 }
 
-                                System.out.println("WebSocket authenticated user: " + username);
                             } else {
                                 System.err.println("Invalid JWT token in WebSocket connection");
                                 throw new SecurityException("Invalid JWT token");
@@ -98,5 +112,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 return message;
             }
         });
+    }
+
+    // Custom Principal class to use userId as name
+    public static class CustomUserPrincipal implements java.security.Principal {
+        private final String userId;
+        private final UserDetails userDetails;
+
+        public CustomUserPrincipal(String userId, UserDetails userDetails) {
+            this.userId = userId;
+            this.userDetails = userDetails;
+        }
+
+        @Override
+        public String getName() {
+            return userId;  // Return userId instead of username
+        }
+
+        public UserDetails getUserDetails() {
+            return userDetails;
+        }
     }
 }

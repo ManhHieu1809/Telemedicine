@@ -15,6 +15,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     List<Message> findByConversationId(Long conversationId);
 
+    @Query("SELECT m FROM Message m WHERE m.conversation.id = :conversationId ORDER BY m.sentAt ASC")
+    List<Message> findByConversationIdOrderBySentAt(@Param("conversationId") Long conversationId);
+
     @Query("SELECT m FROM Message m WHERE m.conversation.id = :conversationId " +
             "AND m.receiver.id = :receiverId AND m.isRead = false")
     List<Message> findUnreadMessagesByConversationAndReceiver(
@@ -32,4 +35,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "AND m.receiver.id = :userId AND m.isRead = false")
     Long countUnreadMessagesByConversationAndUser(@Param("conversationId") Long conversationId,
                                                   @Param("userId") Long userId);
+
+
 }

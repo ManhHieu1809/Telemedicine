@@ -40,7 +40,6 @@ public class UserService {
     private final ReviewRepository reviewRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
-    private static final String UPLOAD_DIR = "uploads/avatars/";
     private final PasswordEncoder passwordEncoder;
     private final AppointmentRepository appointmentRepository;
     private final PaymentRepository paymentRepository;
@@ -127,13 +126,13 @@ public class UserService {
 
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
-
+        if(request.getUsername() != null) user.setUsername(request.getUsername());
         userRepository.save(user);
 
         if (user.getRoles() == User.UserRole.PATIENT) {
             Patient patient = patientRepository.findByUserId(userId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bệnh nhân"));
-            if(request.getUsername() != null) user.setUsername(request.getUsername());
+
             if (request.getFullName() != null) patient.setFullName(request.getFullName());
             if (request.getPhone() != null) patient.setPhone(request.getPhone());
             if (request.getAddress() != null) patient.setAddress(request.getAddress());
@@ -143,6 +142,7 @@ public class UserService {
         } else if (user.getRoles() == User.UserRole.DOCTOR) {
             Doctor doctor = doctorRepository.findByUserId(userId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bác sĩ"));
+
             if (request.getFullName() != null) doctor.setFullName(request.getFullName());
             if (request.getPhone() != null) doctor.setPhone(request.getPhone());
             if (request.getAddress() != null) doctor.setAddress(request.getAddress());
@@ -250,6 +250,7 @@ public class UserService {
         DoctorDetailsResponse response = new DoctorDetailsResponse();
         response.setDoctorId(doctor.getId());
         response.setFullName(doctor.getFullName());
+        response.setAvatarUrl(doctor.getUser().getAvatarUrl());
         response.setSpecialty(doctor.getSpecialty());
         response.setExperience(doctor.getExperience());
         response.setPhone(doctor.getPhone());

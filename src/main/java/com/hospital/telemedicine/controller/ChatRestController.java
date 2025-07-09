@@ -1,5 +1,7 @@
 package com.hospital.telemedicine.controller;
 
+import com.hospital.telemedicine.dto.DoctorDTO;
+import com.hospital.telemedicine.dto.request.CreateConversationRequest;
 import com.hospital.telemedicine.dto.response.ChatMessageResponse;
 import com.hospital.telemedicine.dto.ConversationDTO;
 import com.hospital.telemedicine.dto.UserStatusDTO;
@@ -30,12 +32,38 @@ public class ChatRestController {
         return ResponseEntity.ok(messages);
     }
 
+
+    @GetMapping("/history/conversation/{conversationId}")
+    public ResponseEntity<List<ChatMessageResponse>> getChatHistoryByConversation(
+            @PathVariable Long conversationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = extractUserId(userDetails);
+        List<ChatMessageResponse> messages = chatService.getChatHistoryByConversation(conversationId, userId);
+        return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping("/conversation/with-doctor")
+    public ResponseEntity<ConversationDTO> createOrGetConversationWithDoctor(
+            @RequestBody CreateConversationRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long patientId = extractUserId(userDetails);
+        ConversationDTO conversation = chatService.createOrGetConversationWithDoctor(patientId, request.getDoctorId());
+        return ResponseEntity.ok(conversation);
+    }
+
     @GetMapping("/conversations")
     public ResponseEntity<List<ConversationDTO>> getConversations(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = extractUserId(userDetails);
         List<ConversationDTO> conversations = chatService.getConversations(userId);
         return ResponseEntity.ok(conversations);
+    }
+
+    @GetMapping("/doctors")
+    public ResponseEntity<List<DoctorDTO>> getAllDoctors(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        List<DoctorDTO> doctors = chatService.getAllDoctors();
+        return ResponseEntity.ok(doctors);
     }
 
     @GetMapping("/status/{userId}")

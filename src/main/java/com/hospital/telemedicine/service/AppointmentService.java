@@ -328,10 +328,11 @@ public class AppointmentService {
         return new AppointmentResponse(
                 appointment.getId(),
                 appointment.getPatient().getId(),
-                appointment.getPatient().getFullName(),
+                appointment.getPatient().getUser().getUsername(),
                 appointment.getDoctor().getId(),
                 appointment.getDoctor().getFullName(),
                 appointment.getDoctor().getUser().getAvatarUrl(),
+                appointment.getPatient().getUser().getAvatarUrl(),
                 appointment.getDoctor().getSpecialty(),
                 appointment.getDate(),
                 appointment.getTime(),

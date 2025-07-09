@@ -18,6 +18,7 @@ public class ConversationDTO {
     // Thông tin về người chat khác (trong trường hợp chat 1-1)
     private Long otherUserId;
     private String otherUserName;
+    private String otherUserEmail;
     private String otherUserAvatar;
     private String otherUserStatus; // ONLINE/OFFLINE
     private LocalDateTime otherUserLastSeen;
